@@ -1,0 +1,2051 @@
+<?php
+/**
+ * index.php — KOMENK · Koordinat Microwave Link
+ */
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0c0f14">
+<title>KOMENK · Koordinat Microwave Link</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0f14;--surface:#141920;--surface2:#1c2330;--border:#252d3a;
+  --accent:#00e5ff;--accent2:#ff6b35;--accent3:#a78bfa;
+  --text:#e2e8f0;--muted:#64748b;
+  --green:#22c55e;--yellow:#eab308;--red:#ef4444;
+  --radius:6px;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;-webkit-tap-highlight-color:transparent}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;padding-bottom:env(safe-area-inset-bottom)}
+
+/* ── HEADER ── */
+.top-bar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;z-index:600;
+}
+.top-row{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;
+}
+.logo-mark{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:3px;white-space:nowrap}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:1px;white-space:nowrap;display:none}
+@media(min-width:400px){.logo-sub{display:block}}
+.logo-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+
+/* toggle link */
+.toggle-wrap{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.toggle-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
+.tog{position:relative;width:34px;height:20px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-s{position:absolute;inset:0;background:var(--border);border-radius:10px;transition:.2s;cursor:pointer}
+.tog-s:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--muted);border-radius:50%;transition:.2s}
+input:checked+.tog-s{background:rgba(0,229,255,.25);border:1px solid var(--accent)}
+input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
+
+/* multi-select dropdown */
+.filter-row{padding:0 52px 8px 12px;position:relative}
+.ms-trigger{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius);padding:7px 10px;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  font-size:12px;color:var(--text);transition:border .15s;
+}
+.ms-trigger:hover,.ms-trigger.open{border-color:var(--accent)}
+.chips-area{flex:1;display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;min-width:0}
+.chip{
+  font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:2px;
+  border:1px solid;white-space:nowrap;flex-shrink:0;
+}
+.chip-caret{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0;margin-left:auto}
+.chip-caret.open{transform:rotate(180deg)}
+
+.ms-dropdown{
+  position:absolute;left:12px;right:52px;top:100%;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  z-index:700;max-height:260px;overflow-y:auto;display:none;
+}
+.ms-dropdown.open{display:block}
+.ms-item{
+  display:flex;align-items:center;gap:8px;padding:9px 12px;
+  cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);
+  transition:background .12s;
+}
+.ms-item:last-child{border-bottom:none}
+.ms-item:hover{background:var(--surface)}
+.ms-item.selected{background:rgba(0,229,255,.06)}
+.ms-check{
+  width:14px;height:14px;border:1px solid var(--border);border-radius:2px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+}
+.ms-item.selected .ms-check{background:var(--accent);border-color:var(--accent)}
+.ms-check-mark{color:#000;font-size:10px;font-weight:700;display:none}
+.ms-item.selected .ms-check-mark{display:block}
+.ms-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ms-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0}
+
+/* ── MAP ── */
+.map-area{flex:1;position:relative;overflow:hidden;min-height:0}
+#map{width:100%;height:100%}
+.state-msg{display:flex;align-items:center;justify-content:center;height:100%;
+  color:var(--muted);font-size:13px;flex-direction:column;gap:8px}
+.spinner{width:24px;height:24px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes hex-pulse{0%,100%{opacity:.18}50%{opacity:.38}}
+.hex-skeleton{animation:hex-pulse 1.4s ease-in-out infinite}
+
+.map-legend{display:none}
+/* legend collapsible di footer */
+.legend-panel{
+  position:absolute;bottom:100%;right:0;left:0;
+  background:var(--surface2);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  max-height:0;overflow:hidden;transition:max-height .28s ease;
+  z-index:610;box-shadow:0 -4px 16px rgba(0,0,0,.3);
+}
+.legend-panel.open{max-height:40dvh;overflow-y:auto}
+.legend-inner{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px 14px}
+.leg-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-btn{
+  display:flex;align-items:center;gap:5px;padding:0 10px;
+  background:none;border:none;border-left:1px solid var(--border);
+  color:var(--muted);font-size:11px;cursor:pointer;white-space:nowrap;
+  transition:color .15s;height:36px;flex-shrink:0;
+}
+.legend-btn:hover{color:var(--text)}
+.legend-btn.active{color:var(--accent)}
+.legend-caret{font-size:10px;transition:transform .2s}
+.legend-btn.active .legend-caret{transform:rotate(180deg)}
+
+/* detail panel */
+.detail-panel{position:absolute;bottom:0;left:0;right:0;background:var(--surface);
+  border-top:2px solid var(--border);
+  box-shadow:0 -4px 24px rgba(0,0,0,.35);
+  max-height:60vh;height:auto;
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  z-index:1000;display:flex;flex-direction:column}
+.detail-panel.open{transform:translateY(0)}
+.panel-handle{padding:10px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--surface2)}
+.panel-handle h3{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:1.5px;font-weight:700}
+.panel-sub{font-size:11px;color:var(--muted);flex:1;margin-left:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel-breadcrumb{font-size:10px;color:var(--muted);font-family:var(--mono);
+  display:flex;align-items:center;gap:6px;padding:6px 16px;
+  border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.panel-breadcrumb span.active{color:var(--accent)}
+.panel-close{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:16px;line-height:1;padding:2px 6px;margin-left:auto;transition:color .15s}
+.panel-close:hover{color:var(--text)}
+.panel-body{flex:0 1 auto;overflow-y:auto;padding:12px 16px;max-height:calc(60vh - 80px)}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* mwlink — lawan group */
+.lawan-group{background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:8px;
+  box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.lawan-header{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;transition:background .12s;user-select:none}
+.lawan-header:hover{background:var(--surface2)}
+.lawan-header-static{display:flex;align-items:center;gap:8px;padding:10px 12px}
+.lawan-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+.lawan-dot.ghost{opacity:.55;outline:1px dashed currentColor;background:transparent!important;box-shadow:none}
+.lawan-name{font-size:12.5px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);letter-spacing:.2px}
+.lawan-count{font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;flex-shrink:0;font-family:var(--mono)}
+.lawan-chevron{color:var(--muted);font-size:13px;transition:transform .2s;flex-shrink:0}
+.lawan-chevron.open{transform:rotate(180deg)}
+.lawan-links{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--border)}
+.link-row{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--surface)}
+.link-row:last-child{border-bottom:none}
+.link-id-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;cursor:pointer}
+.link-badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;border:1px solid;letter-spacing:.5px;white-space:nowrap}
+.isr-pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.isr-half{background:var(--surface2);border-radius:6px;padding:8px 10px;border:1px solid var(--border);border-top:2px solid var(--accent3)}
+.isr-half:last-child{border-top-color:var(--accent2)}
+.isr-half-ghost{opacity:.5}
+.isr-half-label{font-size:8.5px;color:var(--accent3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;font-weight:700}
+.isr-half:last-child .isr-half-label{color:var(--accent2)}
+.isr-half-stn{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.isr-half-simf{font-size:10px;font-family:var(--mono);color:var(--muted);margin-bottom:3px;letter-spacing:.3px}
+.isr-half-freq{font-size:10px;color:var(--muted);margin-top:2px}
+.pill-tx{color:var(--accent);font-size:9px;font-family:var(--mono);font-weight:700}
+.pill-rx{color:var(--accent2);font-size:9px;font-family:var(--mono);font-weight:700}
+.isr-pair-grid{margin-bottom:8px}
+.link-info-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:8px 0}
+.info-chip{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.info-chip-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.info-chip-val{font-size:11px;color:var(--text);font-family:var(--mono);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.info-chip-val.good{color:var(--green)}.info-chip-val.warn{color:var(--yellow)}.info-chip-val.danger{color:var(--red)}
+.ant-specs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.ant-half{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 9px}
+.ant-half-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;font-weight:700}
+.ant-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.ant-row:last-child{margin-bottom:0}
+.ant-key{font-size:10px;color:var(--muted)}.ant-val{font-size:11px;color:var(--text);font-family:var(--mono);font-weight:500}
+.mw-extra-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:11px;margin-bottom:8px;padding:8px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:6px}
+.mw-extra-grid .k{color:var(--muted)}.mw-extra-grid .v{color:var(--text);font-family:var(--mono);font-weight:500}
+.mwlink-detail{display:none;padding:8px 0 2px}
+.mwlink-detail.open{display:block}
+.mw-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:11px}
+.mw-meta-grid .k{color:var(--muted)}.mw-meta-grid .v{color:var(--text);font-weight:500}
+.mw-chevron{color:var(--muted);font-size:13px;transition:transform .2s;flex-shrink:0}
+.mw-chevron.open{transform:rotate(180deg)}
+.goto-btn{display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:10px;width:100%;padding:8px 12px;border:1px solid var(--accent);
+  border-radius:6px;background:rgba(0,229,255,.05);color:var(--accent);
+  font-size:12px;font-weight:600;cursor:pointer;transition:background .12s}
+.goto-btn:hover{background:rgba(0,229,255,.12)}
+.chip{display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 6px;border-radius:2px;border:1px solid}
+.chip-ok{color:var(--green);border-color:var(--green);background:rgba(34,197,94,.08)}
+.chip-exp{color:var(--red);border-color:var(--red);background:rgba(239,68,68,.08)}
+.chip-soon{color:var(--yellow);border-color:var(--yellow);background:rgba(234,179,8,.08)}
+
+/* ── FOOTER ── */
+.bottom-bar{
+  background:var(--surface);border-top:1px solid var(--border);
+  flex-shrink:0;padding:6px 12px;
+  display:flex;align-items:center;gap:0;
+  position:relative;z-index:600;min-height:48px;
+  overflow:visible;
+}
+.stat-pill{
+  display:flex;flex-direction:column;align-items:center;
+  flex:1;padding:2px 0;
+}
+.stat-pill+.stat-pill{border-left:1px solid var(--border)}
+.sp-val{font-family:var(--mono);font-size:15px;color:var(--accent);font-weight:700}
+.sp-lbl{font-size:10px;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;margin-top:2px}
+.stat-info{font-size:10px;color:var(--muted);margin-left:auto;padding-left:12px;text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
+
+/* leaflet */
+.leaflet-container{background:#0c0f14!important}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
+.leaflet-top.leaflet-right .leaflet-control-zoom{margin-right:10px!important;transition:margin-top .2s}
+.leaflet-control-attribution{background:rgba(20,25,32,.85)!important;color:var(--muted)!important;font-size:10px!important}
+.lf-tooltip{background:var(--surface)!important;border:1px solid var(--border)!important;
+  border-radius:var(--radius)!important;color:var(--text)!important;font-family:var(--sans)!important;
+  font-size:12px!important;padding:6px 10px!important;box-shadow:0 4px 12px rgba(0,0,0,.4)!important}
+.lf-tooltip b{color:var(--accent)}
+.link-count-label{
+  background:rgba(12,15,20,.82);border:1px solid rgba(255,255,255,.25);
+  border-radius:3px;font-family:var(--mono);font-size:10px;font-weight:700;
+  color:#fff;padding:1px 5px;white-space:nowrap;pointer-events:none;
+  transition:opacity .15s;line-height:1.4;
+}
+
+/* ── MOBILE ── */
+/* ── MOBILE PORTRAIT (primary) ── */
+@media(max-width:480px){
+  /* header kompak */
+  .top-row{padding:5px 10px;gap:6px;min-height:44px}
+  .logo-mark{font-size:12px;letter-spacing:2px}
+  .toggle-lbl{display:none}
+  .filter-row{padding:0 10px 6px}
+
+  /* dropdown klien */
+  .ms-dropdown{max-height:45dvh}
+  .ms-trigger{padding:10px 10px;min-height:44px}
+  .ms-item{padding:13px 12px;min-height:48px;font-size:13px}
+
+  /* chips */
+  .chip{font-size:11px;padding:3px 8px}
+
+  /* detail panel — hampir full screen, dvh-aware */
+  .detail-panel{
+    max-height:88dvh;
+    border-radius:14px 14px 0 0;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .panel-body{
+    max-height:calc(88dvh - 96px - env(safe-area-inset-bottom));
+    padding:10px 12px;
+  }
+  .panel-body::-webkit-scrollbar{width:3px}
+
+  /* drag handle pill lebih besar & tebal */
+  .panel-handle{padding:16px 12px 8px;position:relative}
+  .panel-handle::before{
+    content:'';display:block;
+    width:40px;height:5px;border-radius:3px;
+    background:var(--border);
+    position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  }
+  .panel-handle h3{font-size:11px}
+  .panel-sub{font-size:10px}
+
+  /* lawan/link rows — jari-friendly */
+  .link-row{padding:11px 10px}
+  .lawan-header{padding:13px 10px;min-height:52px}
+  .lawan-name{font-size:13px}
+  .link-id-row{min-height:48px;align-items:center}
+  .link-badge{font-size:11px;padding:5px 10px}
+
+  /* info-bar: 2×2 */
+  .link-info-bar{grid-template-columns:repeat(2,1fr);gap:6px}
+  .info-chip{padding:8px 9px}
+  .info-chip-val{font-size:13px}
+  .info-chip-label{font-size:10px}
+
+  /* isr-pair: stack vertikal di layar sangat sempit */
+  .isr-pair-grid{grid-template-columns:1fr;gap:6px}
+  .isr-half{padding:10px 11px}
+  .isr-half-stn{font-size:13px}
+  .isr-half-simf{font-size:11px}
+  .isr-half-freq{font-size:11px}
+
+  /* ant-specs */
+  .ant-val{font-size:12px}
+  .ant-key{font-size:11px}
+  .ant-half{padding:9px 11px}
+
+  /* extra grid */
+  .mw-extra-grid{font-size:12px;gap:5px 10px}
+
+  /* goto-btn */
+  .goto-btn{padding:13px;font-size:13px;min-height:48px}
+
+  /* footer — safe-area & compact */
+  .bottom-bar{
+    padding:4px 8px;
+    min-height:52px;
+    padding-bottom:max(4px, env(safe-area-inset-bottom));
+  }
+  .sp-val{font-size:14px}
+  .sp-lbl{font-size:9px}
+  .stat-info{display:none}
+
+  /* mobile: semua tombol kanan, 44px */
+  .leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;font-size:22px!important}
+  .leaflet-top.leaflet-right .leaflet-control-zoom{margin-right:10px!important}
+  /* zoom 44px×2 + border = 90px, gap 14px → map-controls top = topbar + 8 + 90 + 14 = topbar + 112px */
+  .map-controls{right:10px;gap:10px;top:calc(var(--topbar-h, 88px) + 112px)}
+  .map-ctrl-btn{width:44px;height:44px;font-size:20px}
+  .compass-btn svg{width:22px;height:22px}
+  .loc-popup{
+    right:64px;left:10px;
+    top:calc(var(--topbar-h, 88px) + 112px);
+    max-height:45dvh;min-width:0;
+  }
+  .loc-popup input{font-size:16px;padding:11px 12px}
+  .loc-popup-btns button{padding:13px;font-size:13px;min-height:48px}
+}
+
+/* layar sangat sempit (<360px) */
+@media(max-width:360px){
+  .isr-pair-grid{grid-template-columns:1fr}
+  .link-info-bar{grid-template-columns:repeat(2,1fr)}
+  .panel-body{padding:8px 10px}
+}
+
+/* landscape mobile */
+@media(max-width:768px) and (orientation:landscape){
+  .detail-panel{max-height:60dvh;border-radius:0}
+  .panel-body{max-height:calc(60dvh - 76px)}
+  .ms-dropdown{max-height:130px}
+  .toggle-lbl{display:none}
+  .panel-handle::before{display:none}
+  .panel-handle{padding:8px 12px}
+  .isr-pair-grid{grid-template-columns:1fr 1fr}
+}
+
+/* ── PANEL TABS ── */
+.panel-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.panel-tabs::-webkit-scrollbar{display:none}
+.panel-tab{
+  padding:8px 14px;font-size:11px;font-family:var(--mono);letter-spacing:.5px;
+  cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;
+  color:var(--muted);transition:color .15s,border-color .15s;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+.panel-tab:hover{color:var(--text)}
+.panel-tab.active{color:var(--text);border-bottom-color:var(--tab-color,var(--accent))}
+.panel-tab-dot{width:7px;height:7px;border-radius:50%;background:var(--tab-color,var(--accent));flex-shrink:0}
+.panel-tab-pane{display:none}
+.panel-tab-pane.active{display:block}
+
+/* ── MAP CONTROLS (zoom Leaflet + GPS + compass) ── */
+/* Zoom Leaflet: kanan atas, tepat di bawah top-bar */
+.leaflet-top.leaflet-right{top:0;right:0}
+.leaflet-top.leaflet-right .leaflet-control-zoom{
+  margin-top:calc(var(--topbar-h, 88px) + 8px)!important;
+  margin-right:10px!important;
+}
+.leaflet-control-zoom{border:none!important;box-shadow:0 1px 4px rgba(0,0,0,.4)!important}
+.leaflet-control-zoom a{
+  width:36px!important;height:36px!important;line-height:36px!important;
+  font-size:18px!important;border-radius:4px!important;
+  background:var(--surface)!important;color:var(--text)!important;
+  border:1px solid var(--border)!important;
+}
+.leaflet-control-zoom-in{border-radius:4px 4px 0 0!important;border-bottom:none!important}
+.leaflet-control-zoom-out{border-radius:0 0 4px 4px!important}
+
+/* GPS + Compass: di bawah zoom (zoom = 2×36px + 2px border-bottom = 74px, gap 12px) */
+/* top = topbar + 8px (zoom start) + 74px (zoom height) + 12px (gap) = topbar + 94px */
+.map-controls{
+  position:absolute;right:10px;z-index:599;
+  display:flex;flex-direction:column;gap:8px;
+  top:calc(var(--topbar-h, 88px) + 94px);
+}
+.map-ctrl-btn{
+  width:36px;height:36px;border-radius:4px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--accent);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,border-color .15s;
+  box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.map-ctrl-btn:hover{background:var(--surface2);border-color:var(--accent)}
+.compass-btn{color:var(--text)}
+.compass-btn.rotated{border-color:var(--accent);color:var(--accent)}
+#compassNeedle{display:block;transition:transform .3s ease}
+
+/* Loc popup: sejajar dengan tombol GPS */
+.loc-popup{
+  position:absolute;right:56px;z-index:600;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 12px;
+  display:none;flex-direction:column;gap:8px;min-width:220px;
+  top:calc(var(--topbar-h, 88px) + 94px);max-height:50vh;overflow-y:auto;
+}
+.loc-popup.open{display:flex}
+.loc-popup label{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.loc-popup input{
+  background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;
+  outline:none;transition:border .15s;
+}
+.loc-popup input:focus{border-color:var(--accent)}
+.loc-popup-btns{display:flex;gap:6px}
+.loc-popup-btns button{
+  flex:1;padding:6px;border-radius:4px;font-size:11px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);color:var(--text);
+  transition:background .12s;
+}
+.loc-popup-btns button.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.loc-popup-btns button:hover{background:var(--surface2)}
+.loc-popup-btns button.primary:hover{background:#00c4dd}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="top-bar">
+    <div class="top-row">
+      <span class="logo-mark">KOMENK</span>
+      <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
+      <span class="logo-sub">KOORDINAT MICROWAVE LINK</span>
+      <div class="toggle-wrap">
+        <span class="toggle-lbl">Garis link</span>
+        <label class="tog">
+          <input type="checkbox" id="linkToggle">
+          <span class="tog-s"></span>
+        </label>
+      </div>
+      <div class="toggle-wrap" style="margin-left:4px">
+        <span class="toggle-lbl">Peta</span>
+        <select id="basemapSel" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:11px;padding:3px 6px;cursor:pointer;outline:none">
+          <option value="dark">🌑 Dark</option>
+          <option value="bright">☀️ Bright</option>
+          <option value="satellite">🛰️ Satelit</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="ms-trigger" id="msTrigger" onclick="toggleDropdown()">
+        <div class="chips-area" id="chipsArea">
+          <span class="chip" style="border-color:var(--accent);color:var(--accent)">Memuat…</span>
+        </div>
+        <span class="chip-caret" id="chipCaret">▾</span>
+      </div>
+      <div class="ms-dropdown" id="msDropdown"></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-area">
+    <div id="map"></div>
+
+
+    <!-- Map controls: zoom (Leaflet inject di sini) + GPS + Compass dalam satu kolom kanan -->
+    <div class="map-controls" id="mapControls">
+      <button class="map-ctrl-btn" id="locBtn" title="Lokasi saya">&#9678;</button>
+      <button class="map-ctrl-btn compass-btn" id="compassBtn" title="Reset rotasi peta">
+        <svg id="compassNeedle" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="9,1 11,9 9,17 7,9" fill="currentColor" opacity=".4"/>
+          <polygon points="9,1 11,9 9,8 7,9" fill="#ef4444"/>
+        </svg>
+      </button>
+    </div>
+    <div class="loc-popup" id="locPopup">
+      <label>Latitude<input type="number" id="manualLat" placeholder="-7.8013" step="any"></label>
+      <label>Longitude<input type="number" id="manualLng" placeholder="110.3649" step="any"></label>
+      <div class="loc-popup-btns">
+        <button onclick="useManualLoc()">Pakai</button>
+        <button onclick="useGPSLoc()" title="Deteksi otomatis">&#9678; GPS</button>
+        <button class="primary" onclick="goToLoc()">Go</button>
+      </div>
+    </div>
+
+    <div id="stateOverlay" class="state-msg" style="position:absolute;inset:0;background:var(--bg);z-index:500">
+      <div class="spinner"></div>
+      <span>Memuat data…</span>
+    </div>
+
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="panel-handle">
+        <h3 id="panelTitle">DETAIL</h3>
+        <span class="panel-sub" id="panelSub"></span>
+        <button class="panel-close" id="panelClose" title="Tutup">✕</button>
+      </div>
+      <div class="panel-tabs" id="panelTabs" style="display:none"></div>
+      <div class="panel-breadcrumb" id="panelBreadcrumb" style="display:none"></div>
+      <div class="panel-body" id="panelBody"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="bottom-bar">
+    <div class="legend-panel" id="legendPanel">
+      <div class="legend-inner" id="legendInner"></div>
+    </div>
+    <div class="stat-pill">
+      <span class="sp-val" id="footIsr">—</span>
+      <span class="sp-lbl">ISR</span>
+    </div>
+    <div class="stat-pill">
+      <span class="sp-val" id="footLink">—</span>
+      <span class="sp-lbl">MW Link</span>
+    </div>
+    <div class="stat-pill">
+      <span class="sp-val" id="footKlien">—</span>
+      <span class="sp-lbl">Klien</span>
+    </div>
+    <button class="legend-btn" id="legendBtn" onclick="toggleLegend()">
+      Legenda <span class="legend-caret">▲</span>
+    </button>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script>
+!function(t){"function"==typeof define&&define.amd?define(t):t()}((function(){"use strict";const t=L.extend({},L.DomUtil);L.extend(L.DomUtil,{setTransform:function(o,e,i,n,a){var s=e||new L.Point(0,0);if(!n)return e=s._round(),t.setTransform.apply(this,arguments);s=s.rotateFrom(n,a),o.style[L.DomUtil.TRANSFORM]="translate3d("+s.x+"px,"+s.y+"px,0)"+(i?" scale("+i+")":"")+" rotate("+n+"rad)"},setPosition:function(o,e,i,n,a){if(!i)return t.setPosition.apply(this,arguments);o._leaflet_pos=e,L.Browser.any3d?L.DomUtil.setTransform(o,e,a,i,n):(o.style.left=e.x+"px",o.style.top=e.y+"px")},DEG_TO_RAD:Math.PI/180,RAD_TO_DEG:180/Math.PI}),L.Draggable.include({}),L.extend(L.Point.prototype,{rotate:function(t){return this.rotateFrom(t,new L.Point(0,0))},rotateFrom:function(t,o){if(!t)return this;var e=Math.sin(t),i=Math.cos(t),n=o.x,a=o.y,s=this.x-n,r=this.y-a;return new L.Point(s*i-r*e+n,s*e+r*i+a)}});const o=L.extend({},L.DivOverlay.prototype);L.DivOverlay.include({getEvents:function(){return L.extend(o.getEvents.apply(this,arguments),{rotate:this._updatePosition})},_updatePosition:function(){if(this._map&&(o._updatePosition.apply(this,arguments),this._map&&this._map._rotate&&this._zoomAnimated)){var t=this._getAnchor(),e=L.DomUtil.getPosition(this._container).subtract(t);L.DomUtil.setPosition(this._container,this._map.rotatedPointToMapPanePoint(e).add(t))}}});const e=L.extend({},L.Popup.prototype);L.Popup.include({_animateZoom:function(t){if(e._animateZoom.apply(this,arguments),this._map&&this._map._rotate){var o=this._getAnchor(),i=L.DomUtil.getPosition(this._container).subtract(o);L.DomUtil.setPosition(this._container,this._map.rotatedPointToMapPanePoint(i).add(o))}},_adjustPan:function(){if(!(!this.options.autoPan||this._map._panAnim&&this._map._panAnim._inProgress))if(this._autopanning)this._autopanning=!1;else{var t=this._map,o=parseInt(L.DomUtil.getStyle(this._container,"marginBottom"),10)||0,e=this._container.offsetHeight+o,i=this._containerWidth,n=new L.Point(this._containerLeft,-e-this._containerBottom);n._add(L.DomUtil.getPosition(this._container));var a=n._add(this._map._getMapPanePos()),s=L.point(this.options.autoPanPadding),r=L.point(this.options.autoPanPaddingTopLeft||s),h=L.point(this.options.autoPanPaddingBottomRight||s),_=t.getSize(),d=0,p=0;a.x+i+h.x>_.x&&(d=a.x+i-_.x+h.x),a.x-d-r.x<0&&(d=a.x-r.x),a.y+e+h.y>_.y&&(p=a.y+e-_.y+h.y),a.y-p-r.y<0&&(p=a.y-r.y),(d||p)&&(this.options.keepInView&&(this._autopanning=!0),t.fire("autopanstart").panBy([d,p]))}}});const i=L.extend({},L.Tooltip.prototype);L.Tooltip.include({_animateZoom:function(t){if(!this._map._rotate)return i._animateZoom.apply(this,arguments);var o=this._map._latLngToNewLayerPoint(this._latlng,t.zoom,t.center);o=this._map.rotatedPointToMapPanePoint(o),this._setPosition(o)},_updatePosition:function(){if(!this._map._rotate)return i._updatePosition.apply(this,arguments);var t=this._map.latLngToLayerPoint(this._latlng);t=this._map.rotatedPointToMapPanePoint(t),this._setPosition(t)}}),L.extend({},L.Icon.prototype),L.Icon.include({_setIconStyles:function(t,o){var e=this.options,i=e[o+"Size"];"number"==typeof i&&(i=[i,i]);var n=L.point(i),a=L.point("shadow"===o&&e.shadowAnchor||e.iconAnchor||n&&n.divideBy(2,!0));t.className="leaflet-marker-"+o+" "+(e.className||""),a&&(t.style.marginLeft=-a.x+"px",t.style.marginTop=-a.y+"px",t.style[L.DomUtil.TRANSFORM+"Origin"]=a.x+"px "+a.y+"px 0px"),n&&(t.style.width=n.x+"px",t.style.height=n.y+"px")}});const n=L.extend({},L.Marker.prototype);var a;L.Marker.mergeOptions({rotation:0,rotateWithView:!1,scale:void 0});var s={_onDrag:function(t){var o=this._marker,e=o.options.rotation||o.options.rotateWithView,i=o._shadow,n=L.DomUtil.getPosition(o._icon);!e&&i&&L.DomUtil.setPosition(i,n),o._map._rotate&&(n=o._map.mapPanePointToRotatedPoint(n));var a=o._map.layerPointToLatLng(n);o._latlng=a,t.latlng=a,t.oldLatLng=this._oldLatLng,e?o.setLatLng(a):o.fire("move",t),o.fire("drag",t)},_onDragEnd:function(t){this._marker._map._rotate&&this._marker.update(),a._onDragEnd.apply(this,arguments)}};L.Marker.include({getEvents:function(){return L.extend(n.getEvents.apply(this,arguments),{rotate:this.update})},_initInteraction:function(){var t=n._initInteraction.apply(this,arguments);return this.dragging&&this.dragging.enabled()&&this._map&&this._map._rotate&&(a=a||Object.getPrototypeOf(this.dragging),this.dragging.disable(),Object.assign(this.dragging,{_onDrag:s._onDrag.bind(this.dragging),_onDragEnd:s._onDragEnd.bind(this.dragging)}),this.dragging.enable()),t},_setPos:function(t){this._map._rotate&&(t=this._map.rotatedPointToMapPanePoint(t));var o=this.options.rotation||0;this.options.rotateWithView&&(o+=this._map._bearing),this._icon&&L.DomUtil.setPosition(this._icon,t,o,t,this.options.scale),this._shadow&&L.DomUtil.setPosition(this._shadow,t,o,t,this.options.scale),this._zIndex=t.y+this.options.zIndexOffset,this._resetZIndex()},setRotation:function(t){this.options.rotation=t,this.update()}});const r=L.extend({},L.GridLayer.prototype);L.GridLayer.include({getEvents:function(){var t=r.getEvents.apply(this,arguments);return this._map._rotate&&!this.options.updateWhenIdle&&(this._onRotate||(this._onRotate=L.Util.throttle(this._onMoveEnd,this.options.updateInterval,this)),t.rotate=this._onRotate),t},_getTiledPixelBounds:function(t){return this._map._rotate?this._map._getNewPixelBounds(t,this._tileZoom):r._getTiledPixelBounds.apply(this,arguments)}});const h=L.extend({},L.Renderer.prototype);L.Renderer.include({getEvents:function(){return L.extend(h.getEvents.apply(this,arguments),{rotate:this._update})},onAdd:function(){h.onAdd.apply(this,arguments),L.version<="1.9.3"&&this._container.classList.add("leaflet-zoom-animated")},_updateTransform:function(t,o){if(!this._map._rotate)return h._updateTransform.apply(this,arguments);var e=this._map.getZoomScale(o,this._zoom),i=this._map._latLngToNewLayerPoint(this._topLeft,o,t);L.DomUtil.setTransform(this._container,i,e)},_update:function(){if(!this._map._rotate)return h._update.apply(this,arguments);this._bounds=this._map._getPaddedPixelBounds(this.options.padding),this._topLeft=this._map.layerPointToLatLng(this._bounds.min),this._center=this._map.getCenter(),this._zoom=this._map.getZoom()}});const _=L.extend({},L.Map.prototype);L.Map.mergeOptions({rotate:!1,bearing:0}),L.Map.include({initialize:function(t,o){o.rotate&&(this._rotate=!0,this._bearing=0),_.initialize.apply(this,arguments),this.options.rotate&&this.setBearing(this.options.bearing)},containerPointToLayerPoint:function(t){return this._rotate?L.point(t).subtract(this._getMapPanePos()).rotateFrom(-this._bearing,this._getRotatePanePos()).subtract(this._getRotatePanePos()):_.containerPointToLayerPoint.apply(this,arguments)},layerPointToContainerPoint:function(t){return this._rotate?L.point(t).add(this._getRotatePanePos()).rotateFrom(this._bearing,this._getRotatePanePos()).add(this._getMapPanePos()):_.layerPointToContainerPoint.apply(this,arguments)},rotatedPointToMapPanePoint:function(t){return L.point(t).rotate(this._bearing)._add(this._getRotatePanePos())},mapPanePointToRotatedPoint:function(t){return L.point(t)._subtract(this._getRotatePanePos()).rotate(-this._bearing)},mapBoundsToContainerBounds:function(t){if(!this._rotate&&_.mapBoundsToContainerBounds)return _.mapBoundsToContainerBounds.apply(this,arguments);const o=this.getPixelOrigin(),e=this.layerPointToContainerPoint(this.project(t.getNorthWest())._subtract(o)),i=this.layerPointToContainerPoint(this.project(t.getNorthEast())._subtract(o)),n=this.layerPointToContainerPoint(this.project(t.getSouthWest())._subtract(o)),a=this.layerPointToContainerPoint(this.project(t.getSouthEast())._subtract(o));return L.bounds([L.point(Math.min(e.x,i.x,a.x,n.x),Math.min(e.y,i.y,a.y,n.y)),L.point(Math.max(e.x,i.x,a.x,n.x),Math.max(e.y,i.y,a.y,n.y))])},getBounds:function(){if(!this._rotate)return _.getBounds.apply(this,arguments);var t=this.getSize();return new L.LatLngBounds([this.containerPointToLatLng([0,0]),this.containerPointToLatLng([t.x,0]),this.containerPointToLatLng([t.x,t.y]),this.containerPointToLatLng([0,t.y])])},setBearing:function(t){if(L.Browser.any3d&&this._rotate){var o=L.Util.wrapNum(t,[0,360])*L.DomUtil.DEG_TO_RAD,e=this._getPixelCenter(),i=this._getRotatePanePos().rotateFrom(-this._bearing,e),n=i.rotateFrom(o,e);L.DomUtil.setPosition(this._rotatePane,i,o,e),this._pivot=e,this._bearing=o,this._rotatePanePos=n,this.fire("rotate")}},getBearing:function(){return this._bearing*L.DomUtil.RAD_TO_DEG},_initPanes:function(){var t=this._panes={};this._paneRenderers={},this._mapPane=this.createPane("mapPane",this._container),L.DomUtil.setPosition(this._mapPane,new L.Point(0,0)),this._rotate?(this._rotatePane=this.createPane("rotatePane",this._mapPane),this._norotatePane=this.createPane("norotatePane",this._mapPane),this.createPane("tilePane",this._rotatePane),this.createPane("overlayPane",this._rotatePane),this.createPane("shadowPane",this._norotatePane),this.createPane("markerPane",this._norotatePane),this.createPane("tooltipPane",this._norotatePane),this.createPane("popupPane",this._norotatePane)):(this.createPane("tilePane"),this.createPane("overlayPane"),this.createPane("shadowPane"),this.createPane("markerPane"),this.createPane("tooltipPane"),this.createPane("popupPane")),this.options.markerZoomAnimation||(L.DomUtil.addClass(t.markerPane,"leaflet-zoom-hide"),L.DomUtil.addClass(t.shadowPane,"leaflet-zoom-hide"))},panInside(t,o){if(!this._rotate||Math.abs(this._bearing).toFixed(1)<.1)return _.panInside.apply(this,arguments);o=o||{};const e=L.point(o.paddingTopLeft||o.padding||[0,0]),i=L.point(o.paddingBottomRight||o.padding||[0,0]),n=this._container.getBoundingClientRect(),a=this.latLngToContainerPoint(t),s=L.bounds([L.point(n),L.point(n).add(this.getSize())]),r=s.getCenter(),h=L.bounds([s.min.add(e),s.max.subtract(i)]),d=h.getSize();if(!h.contains(a)){this._enforcingBounds=!0;const t=a.subtract(h.getCenter()),e=h.extend(a).getSize().subtract(d);r.x+=t.x<0?-e.x:e.x,r.y+=t.y<0?-e.y:e.y,this.panTo(this.containerPointToLatLng(r),o),this._enforcingBounds=!1}return this},getBoundsZoom(t,o,e){if(!this._rotate||Math.abs(this._bearing).toFixed(1)<.1)return _.getBoundsZoom.apply(this,arguments);t=L.latLngBounds(t),e=L.point(e||[0,0]);let i=this.getZoom()||0;const n=this.getMinZoom(),a=this.getMaxZoom(),s=this.getSize().subtract(e),r=this.mapBoundsToContainerBounds(t).getSize(),h=this.options.zoomSnap,d=s.x/r.x,p=s.y/r.y,l=o?Math.max(d,p):Math.min(d,p);return i=this.getScaleZoom(l,i),h&&(i=Math.round(i/(h/100))*(h/100),i=o?Math.ceil(i/h)*h:Math.floor(i/h)*h),Math.max(n,Math.min(a,i))},_getCenterOffset:function(t){var o=_._getCenterOffset.apply(this,arguments);return this._rotate&&(o=o.rotate(this._bearing)),o},_getRotatePanePos:function(){return this._rotatePanePos||new L.Point(0,0)},_getNewPixelOrigin:function(t,o){if(!this._rotate)return _._getNewPixelOrigin.apply(this,arguments);var e=this.getSize()._divideBy(2);return this.project(t,o).rotate(this._bearing)._subtract(e)._add(this._getMapPanePos())._add(this._getRotatePanePos()).rotate(-this._bearing)._round()},_getNewPixelBounds:function(t,o){if(t=t||this.getCenter(),o=o||this.getZoom(),!this._rotate&&_._getNewPixelBounds)return _._getNewPixelBounds.apply(this,arguments);var e=this._animatingZoom?Math.max(this._animateToZoom,this.getZoom()):this.getZoom(),i=this.getZoomScale(e,o),n=this.project(t,o).floor(),a=this.getSize(),s=new L.Bounds([this.containerPointToLayerPoint([0,0]).floor(),this.containerPointToLayerPoint([a.x,0]).floor(),this.containerPointToLayerPoint([0,a.y]).floor(),this.containerPointToLayerPoint([a.x,a.y]).floor()]).getSize().divideBy(2*i);return new L.Bounds(n.subtract(s),n.add(s))},_getPixelCenter:function(){return!this._rotate&&_._getPixelCenter?_._getPixelCenter.apply(this,arguments):this.getSize()._divideBy(2)._subtract(this._getMapPanePos())},_getPaddedPixelBounds:function(t){if(!this._rotate&&_._getPaddedPixelBounds)return _._getPaddedPixelBounds.apply(this,arguments);var o=t,e=this.getSize(),i=e.multiplyBy(-o),n=e.multiplyBy(1+o);return new L.Bounds([this.containerPointToLayerPoint([i.x,i.y]).floor(),this.containerPointToLayerPoint([i.x,n.y]).floor(),this.containerPointToLayerPoint([n.x,i.y]).floor(),this.containerPointToLayerPoint([n.x,n.y]).floor()])},_handleGeolocationResponse:function(t){if(this._container._leaflet_id){var o=t.coords.latitude,e=t.coords.longitude,i=t.coords.heading,n=new L.LatLng(o,e),a=n.toBounds(t.coords.accuracy),s=this._locateOptions;if(s.setView){var r=this.getBoundsZoom(a);this.setView(n,s.maxZoom?Math.min(r,s.maxZoom):r)}var h={latlng:n,bounds:a,timestamp:t.timestamp,heading:i};for(var _ in t.coords)"number"==typeof t.coords[_]&&(h[_]=t.coords[_]);this.fire("locationfound",h)}}}),L.Map.CompassBearing=L.Handler.extend({initialize:function(t){this._map=t,"ondeviceorientationabsolute"in window?this.__deviceOrientationEvent="deviceorientationabsolute":"ondeviceorientation"in window&&(this.__deviceOrientationEvent="deviceorientation"),this._throttled=L.Util.throttle(this._onDeviceOrientation,100,this)},addHooks:function(){this._map._rotate&&this.__deviceOrientationEvent?L.DomEvent.on(window,this.__deviceOrientationEvent,this._throttled,this):this.disable()},removeHooks:function(){this._map._rotate&&this.__deviceOrientationEvent&&L.DomEvent.off(window,this.__deviceOrientationEvent,this._throttled,this)},_onDeviceOrientation:function(t){var o=t.webkitCompassHeading||t.alpha,e=0;!t.absolute&&t.webkitCompassHeading&&(o=360-o),t.absolute||void 0===window.orientation||(e=window.orientation),this._map.setBearing(o-e)}}),L.Map.addInitHook("addHandler","compassBearing",L.Map.CompassBearing),L.Map.mergeOptions({trackContainerMutation:!1}),L.Map.ContainerMutation=L.Handler.extend({addHooks:function(){this._observer||(this._observer=new MutationObserver(L.Util.bind(this._map.invalidateSize,this._map))),this._observer.observe(this._map.getContainer(),{childList:!1,attributes:!0,characterData:!1,subtree:!1,attributeFilter:["style"]})},removeHooks:function(){this._observer.disconnect()}}),L.Map.addInitHook("addHandler","trackContainerMutation",L.Map.ContainerMutation),L.Map.mergeOptions({bounceAtZoomLimits:!0}),L.Map.TouchGestures=L.Handler.extend({initialize:function(t){this._map=t,this.rotate=!!this._map.options.touchRotate,this.zoom=!!this._map.options.touchZoom},addHooks:function(){L.DomEvent.on(this._map._container,"touchstart",this._onTouchStart,this)},removeHooks:function(){L.DomEvent.off(this._map._container,"touchstart",this._onTouchStart,this)},_onTouchStart:function(t){var o=this._map;if(t.touches&&2===t.touches.length&&!o._animatingZoom&&!this._zooming&&!this._rotating){var e=o.mouseEventToContainerPoint(t.touches[0]),i=o.mouseEventToContainerPoint(t.touches[1]),n=e.subtract(i);this._centerPoint=o.getSize()._divideBy(2),this._startLatLng=o.containerPointToLatLng(this._centerPoint),this.zoom?("center"!==o.options.touchZoom&&(this._pinchStartLatLng=o.containerPointToLatLng(e.add(i)._divideBy(2))),this._startDist=e.distanceTo(i),this._startZoom=o.getZoom(),this._zooming=!0):this._zooming=!1,this.rotate?(this._startTheta=Math.atan(n.x/n.y),this._startBearing=o.getBearing(),n.y<0&&(this._startBearing+=180),this._rotating=!0):this._rotating=!1,this._moved=!1,o._stop(),L.DomEvent.on(document,"touchmove",this._onTouchMove,this).on(document,"touchend touchcancel",this._onTouchEnd,this),L.DomEvent.preventDefault(t)}},_onTouchMove:function(t){if(t.touches&&2===t.touches.length&&(this._zooming||this._rotating)){var o,e=this._map,i=e.mouseEventToContainerPoint(t.touches[0]),n=e.mouseEventToContainerPoint(t.touches[1]),a=i.subtract(n),s=i.distanceTo(n)/this._startDist;if(this._rotating){var r=(Math.atan(a.x/a.y)-this._startTheta)*L.DomUtil.RAD_TO_DEG;a.y<0&&(r+=180),r&&e.setBearing(this._startBearing-r)}if(this._zooming)if(this._zoom=e.getScaleZoom(s,this._startZoom),!e.options.bounceAtZoomLimits&&(this._zoom<e.getMinZoom()&&s<1||this._zoom>e.getMaxZoom()&&s>1)&&(this._zoom=e._limitZoom(this._zoom)),"center"===e.options.touchZoom){if(this._center=this._startLatLng,1===s)return}else{if(o=i._add(n)._divideBy(2)._subtract(this._centerPoint),1===s&&0===o.x&&0===o.y)return;var h=-e.getBearing()*L.DomUtil.DEG_TO_RAD;this._center=e.unproject(e.project(this._pinchStartLatLng).subtract(o.rotate(h)))}this._moved||(e._moveStart(!0,!1),this._moved=!0),L.Util.cancelAnimFrame(this._animRequest);var _=e._move.bind(e,this._center,this._zoom,{pinch:!0,round:!1},void 0);this._animRequest=L.Util.requestAnimFrame(_,this,!0),L.DomEvent.preventDefault(t)}},_onTouchEnd:function(){this._moved&&(this._zooming||this._rotating)?(this._zooming=!1,this._rotating=!1,L.Util.cancelAnimFrame(this._animRequest),L.DomEvent.off(document,"touchmove",this._onTouchMove,this).off(document,"touchend touchcancel",this._onTouchEnd,this),this.zoom&&(this._map.options.zoomAnimation?this._map._animateZoom(this._center,this._map._limitZoom(this._zoom),!0,this._map.options.zoomSnap):this._map._resetView(this._center,this._map._limitZoom(this._zoom)))):this._zooming=!1}}),L.Map.addInitHook("addHandler","touchGestures",L.Map.TouchGestures),L.Map.mergeOptions({touchRotate:!1}),L.Map.TouchRotate=L.Handler.extend({addHooks:function(){this._map.touchGestures.enable(),this._map.touchGestures.rotate=!0},removeHooks:function(){this._map.touchGestures.rotate=!1}}),L.Map.addInitHook("addHandler","touchRotate",L.Map.TouchRotate),L.Map.mergeOptions({shiftKeyRotate:!0}),L.Map.ShiftKeyRotate=L.Handler.extend({addHooks:function(){L.DomEvent.on(this._map._container,"wheel",this._handleShiftScroll,this),this._map.shiftKeyRotate.rotate=!0},removeHooks:function(){L.DomEvent.off(this._map._container,"wheel",this._handleShiftScroll,this),this._map.shiftKeyRotate.rotate=!1},_handleShiftScroll:function(t){t.shiftKey?(t.preventDefault(),this._map.scrollWheelZoom.disable(),this._map.setBearing(this._map._bearing*L.DomUtil.RAD_TO_DEG+5*Math.sign(t.deltaY))):this._map.scrollWheelZoom.enable()}}),L.Map.addInitHook("addHandler","shiftKeyRotate",L.Map.ShiftKeyRotate),L.Map.addInitHook((function(){this.scrollWheelZoom.enabled()&&this.shiftKeyRotate.enabled()&&(this.scrollWheelZoom.disable(),this.scrollWheelZoom.enable())})),L.Map.mergeOptions({touchZoom:L.Browser.touch,bounceAtZoomLimits:!1}),L.Map.TouchZoom=L.Handler.extend({addHooks:function(){L.DomUtil.addClass(this._map._container,"leaflet-touch-zoom"),this._map.touchGestures.enable(),this._map.touchGestures.zoom=!0},removeHooks:function(){L.DomUtil.removeClass(this._map._container,"leaflet-touch-zoom"),this._map.touchGestures.zoom=!1}}),L.Map.addInitHook("addHandler","touchZoom",L.Map.TouchZoom),L.Control.Rotate=L.Control.extend({options:{position:"topleft",closeOnZeroBearing:!0},onAdd:function(t){var o=this._container=L.DomUtil.create("div","leaflet-control-rotate leaflet-bar"),e=this._arrow=L.DomUtil.create("span","leaflet-control-rotate-arrow");e.style.backgroundImage="url(\"data:image/svg+xml;charset=utf-8,%3Csvg width='29' height='29' viewBox='0 0 29 29' xmlns='http://www.w3.org/2000/svg' fill='%23333'%3E%3Cpath d='M10.5 14l4-8 4 8h-8z'/%3E%3Cpath d='M10.5 16l4 8 4-8h-8z' fill='%23ccc'/%3E%3C/svg%3E\")",e.style.cursor="grab",e.style.display="block",e.style.width="100%",e.style.height="100%",e.style.backgroundRepeat="no-repeat",e.style.backgroundPosition="50%";var i=this._link=L.DomUtil.create("a","leaflet-control-rotate-toggle",o);return i.appendChild(e),i.href="#",i.title="Rotate map",L.DomEvent.on(i,"dblclick",L.DomEvent.stopPropagation).on(i,"mousedown",this._handleMouseDown,this).on(i,"click",L.DomEvent.stop).on(i,"click",this._cycleState,this).on(i,"click",this._refocusOnMap,this),L.Browser.any3d||L.DomUtil.addClass(i,"leaflet-disabled"),this._restyle(),t.on("rotate",this._restyle,this),this._follow=!1,this._canFollow=!1,this.options.closeOnZeroBearing&&0===t.getBearing()&&(o.style.display="none"),o},onRemove:function(t){t.off("rotate",this._restyle,this)},_handleMouseDown:function(t){L.DomEvent.stop(t),this.dragging=!0,this.dragstartX=t.pageX,this.dragstartY=t.pageY,L.DomEvent.on(document,"mousemove",this._handleMouseDrag,this).on(document,"mouseup",this._handleMouseUp,this)},_handleMouseUp:function(t){L.DomEvent.stop(t),this.dragging=!1,L.DomEvent.off(document,"mousemove",this._handleMouseDrag,this).off(document,"mouseup",this._handleMouseUp,this)},_handleMouseDrag:function(t){if(this.dragging){var o=t.clientX-this.dragstartX;this._map.setBearing(o)}},_cycleState:function(t){if(this._map){var o=this._map;o.touchRotate.enabled()||o.compassBearing.enabled()?o.compassBearing.enabled()?(o.compassBearing.disable(),o.setBearing(0),this.options.closeOnZeroBearing&&o.touchRotate.enable()):(o.touchRotate.disable(),o.compassBearing.enable()):o.touchRotate.enable(),this._restyle()}},_restyle:function(){if(this._map.options.rotate){var t=this._map,o=t.getBearing();this._arrow.style.transform="rotate("+o+"deg)",o&&this.options.closeOnZeroBearing&&(this._container.style.display="block"),t.compassBearing.enabled()?this._link.style.backgroundColor="orange":t.touchRotate.enabled()?this._link.style.backgroundColor=null:(this._link.style.backgroundColor="grey",0===o&&this.options.closeOnZeroBearing&&(this._container.style.display="none"))}else L.DomUtil.addClass(this._link,"leaflet-disabled")}}),L.control.rotate=function(t){return new L.Control.Rotate(t)},L.Map.mergeOptions({rotateControl:!0}),L.Map.addInitHook((function(){if(this.options.rotateControl){var t="object"==typeof this.options.rotateControl?this.options.rotateControl:{};this.rotateControl=L.control.rotate(t),this.addControl(this.rotateControl)}}))}));
+//# sourceMappingURL=leaflet-rotate.js.map
+
+</script>
+<script>
+
+const API = { clients:'api/clients.php', isr:'api/isr.php' };
+
+const map = L.map('map',{zoomControl:false,wheelDebounceTime:300,wheelPxPerZoomLevel:300,rotate:true,touchRotate:true,bearing:0,rotateControl:false});
+L.control.zoom({position:'topright'}).addTo(map);
+map.setView([-7.80,110.37],11);
+// Basemap switcher — diinisialisasi lebih awal agar dark tile langsung dimuat
+const BASEMAPS={
+  dark:{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',attr:'\u00A9 OpenStreetMap \u00A9 CARTO',sub:'abcd'},
+  bright:{url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',attr:'\u00A9 OpenStreetMap \u00A9 CARTO',sub:'abcd'},
+  satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',attr:'\u00A9 Esri',sub:'',maxNativeZoom:19}
+};
+let currentBaseTile=null;
+function setBasemap(key){
+  if(currentBaseTile) map.removeLayer(currentBaseTile);
+  const b=BASEMAPS[key]||BASEMAPS.dark;
+  currentBaseTile=L.tileLayer(b.url,{attribution:b.attr,subdomains:b.sub||'',maxNativeZoom:b.maxNativeZoom||20,maxZoom:22});
+  if(key==='satellite'){
+    currentBaseTile.on('tileerror',(ev)=>{
+      const nz=b.maxNativeZoom||19;
+      if(map.getZoom()>nz) map.setZoom(nz,{animate:true});
+    });
+  }
+  currentBaseTile.addTo(map);
+  currentBaseTile.bringToBack();
+  document.querySelector('.leaflet-container').style.background=key==='dark'?'#0c0f14':'#e8e8e8';
+}
+setBasemap('dark');
+
+// Pane management ditangani oleh leaflet-rotate plugin
+
+// 1 scroll notch = tepat 1 zoom level, debounce ketat
+map.scrollWheelZoom.disable();
+(()=>{
+  let _wt=null;
+  const panel=document.getElementById('detailPanel');
+  document.getElementById('map').addEventListener('wheel',(ev)=>{
+    if(panel.contains(ev.target)) return;
+    ev.preventDefault();
+    if(_wt) return;
+    _wt=setTimeout(()=>{ _wt=null; },350);
+    const delta=ev.deltaY||ev.detail||(-ev.wheelDelta);
+    map.setZoom(map.getZoom()+(delta>0?-1:1),{animate:true});
+  },{passive:false});
+})();
+let allClients=[], selectedIds=new Set(), mapLayers=L.layerGroup().addTo(map);
+// ── EDGE CANVAS — zero-delay karena digambar ulang tiap frame native ──
+// Dibuat sebagai overlay div di rotatePane sehingga ikut transform tile persis.
+const edgeCanvas = document.createElement('canvas');
+edgeCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
+let edgeCanvasVisible = false;
+let _edgeRAF = null;
+
+function _mountEdgeCanvas() {
+  // Canvas ada di .leaflet-container langsung (bukan rotatePane),
+  // karena kita pakai latLngToContainerPoint — screen coords tidak perlu transform.
+  // z-index 400 = di atas tile (200) tapi di bawah marker (600)
+  const container = map.getContainer();
+  edgeCanvas.style.position = 'absolute';
+  edgeCanvas.style.zIndex = '400';
+  edgeCanvas.style.pointerEvents = 'none';
+  if (!container.contains(edgeCanvas)) container.appendChild(edgeCanvas);
+}
+map.whenReady(_mountEdgeCanvas);
+
+// Konversi latLng → piksel di canvas (koordinat relatif terhadap topLeft rotatePane)
+function _ll2px(lat, lng) {
+  // layerPoint = posisi dalam sistem koordinat Leaflet (relatif pixelOrigin)
+  const lp = map.latLngToLayerPoint([lat, lng]);
+  // rotatePane offset relatif terhadap mapPane
+  const rPos = map._getRotatePanePos ? map._getRotatePanePos() : new L.Point(0,0);
+  return { x: lp.x - rPos.x, y: lp.y - rPos.y };
+}
+
+// Semua edge data untuk digambar (array of {color,weight,ghost,lat1,lng1,lat2,lng2,siteAId,siteBId})
+let _edgeDrawData = [];
+let _activeDrawSiteIds = null; // Set siteId aktif; null = gambar semua
+
+function _resizeEdgeCanvas() {
+  const sz = map.getSize();
+  // Canvas harus lebih besar dari viewport agar garis di luar center tetap keliatan
+  // saat rotasi. Pakai diagonal viewport sebagai radius = selalu cukup.
+  const pad = Math.ceil(Math.sqrt(sz.x*sz.x + sz.y*sz.y));
+  const W = sz.x + pad * 2;
+  const H = sz.y + pad * 2;
+  edgeCanvas.width  = W;
+  edgeCanvas.height = H;
+  edgeCanvas.style.width  = W + 'px';
+  edgeCanvas.style.height = H + 'px';
+  // Offset agar canvas center = map center
+  edgeCanvas.style.left = (-pad) + 'px';
+  edgeCanvas.style.top  = (-pad) + 'px';
+  edgeCanvas._pad = pad;
+}
+
+function _drawEdges() {
+  _edgeRAF = null;
+  const ctx = edgeCanvas.getContext('2d');
+  if (!edgeCanvasVisible || !_edgeDrawData.length) {
+    if (edgeCanvas.width) ctx.clearRect(0, 0, edgeCanvas.width, edgeCanvas.height);
+    return;
+  }
+  _resizeEdgeCanvas();
+  const pad = edgeCanvas._pad || 0;
+  ctx.clearRect(0, 0, edgeCanvas.width, edgeCanvas.height);
+
+  // Canvas ada di luar rotatePane (append ke mapPane/container),
+  // jadi pakai containerPoint — koordinat piksel di layar, tidak terpengaruh rotasi.
+  // Ini zero-delay karena containerPoint dihitung live tanpa transform.
+
+  _edgeDrawData.forEach(e => {
+    // Kalau ada node aktif, hanya gambar garis yang terhubung ke node itu
+    if(_activeDrawSiteIds && !_activeDrawSiteIds.has(e.siteAId) && !_activeDrawSiteIds.has(e.siteBId)) return;
+
+    const pa = map.latLngToContainerPoint([e.lat1, e.lng1]);
+    const pb = map.latLngToContainerPoint([e.lat2, e.lng2]);
+
+    ctx.beginPath();
+    ctx.moveTo(pa.x + pad, pa.y + pad);
+    ctx.lineTo(pb.x + pad, pb.y + pad);
+    ctx.strokeStyle = e.color;
+    ctx.lineWidth = e.weight;
+    ctx.globalAlpha = e.ghost ? 0.55 : 0.85;
+    ctx.setLineDash(e.ghost ? [8, 5] : [8, 4, 2, 4]);
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+  ctx.setLineDash([]);
+}
+
+function scheduleEdgeDraw() {
+  if (_edgeRAF) return;
+  _edgeRAF = requestAnimationFrame(_drawEdges);
+}
+
+// Subscribe ke SEMUA map movement events — zero delay
+map.on('move zoom rotate zoomend moveend viewreset', scheduleEdgeDraw);
+map.on('zoomanim', () => { scheduleEdgeDraw(); });
+
+// Hitbox untuk klik garis — tetap pakai invisible polyline di Leaflet
+let edgeLayer = L.layerGroup(); // hanya hitbox, tidak ada visual
+
+let markerLayer=L.layerGroup().addTo(map);
+let linkLabelsLayer=L.layerGroup(); // tidak di-add ke map dulu
+let skeletonLayer=L.layerGroup().addTo(map); // skeleton hex saat loading per klien
+let activeSiteId=null, openLinkId=null;
+let sitesIndex={}, edgesIndex={};
+let allLayersData={};
+map.on('click', ()=>{ closeDropdownAll(); });
+let showLinks=false;
+
+function showSkeletonForClient(clntId){
+  skeletonLayer.clearLayers();
+  const color=clientColorMap[clntId]||'#00e5ff';
+  const bounds=map.getBounds();
+  const sw=bounds.getSouthWest(), ne=bounds.getNorthEast();
+  const latSpan=ne.lat-sw.lat, lngSpan=ne.lng-sw.lng;
+  // Tampilkan 6 hexagon skeleton tersebar di viewport
+  const positions=[
+    [sw.lat+latSpan*.25, sw.lng+lngSpan*.25],
+    [sw.lat+latSpan*.25, sw.lng+lngSpan*.65],
+    [sw.lat+latSpan*.5,  sw.lng+lngSpan*.45],
+    [sw.lat+latSpan*.65, sw.lng+lngSpan*.2 ],
+    [sw.lat+latSpan*.7,  sw.lng+lngSpan*.7 ],
+    [sw.lat+latSpan*.4,  sw.lng+lngSpan*.8 ],
+  ];
+  positions.forEach(([lat,lng])=>{
+    const icon=L.divIcon({
+      html:`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" class="hex-skeleton">
+        <polygon points="13,2 22,7.5 22,18.5 13,24 4,18.5 4,7.5"
+          fill="${color}" fill-opacity=".15"
+          stroke="${color}" stroke-width="1.5" stroke-dasharray="4 2.5" stroke-linejoin="round"/>
+      </svg>`,
+      className:'',iconSize:[26,26],iconAnchor:[13,13]
+    });
+    L.marker([lat,lng],{icon,interactive:false,zIndexOffset:-500}).addTo(skeletonLayer);
+  });
+}
+
+function clearSkeleton(){
+  skeletonLayer.clearLayers();
+}
+
+
+/* ── MAP ROTATE — menggunakan leaflet-rotate plugin ── */
+// Plugin sudah di-inject sebelum script ini.
+// map dibuat dengan rotate:true, touchRotate:true — dua jari otomatis rotate+zoom.
+// Marker, tooltip, popup semuanya dihandle plugin: posisinya dihitung ulang via
+// setBearing() sehingga tetap ngunci ke koordinat lat/lng yang benar.
+
+// Compass button: reset bearing ke 0
+document.getElementById('compassBtn').addEventListener('click', () => {
+  map.setBearing(0);
+});
+
+// Update jarum kompas setiap kali bearing berubah
+map.on('rotate', () => {
+  const bearing = map.getBearing();
+  const needle = document.getElementById('compassNeedle');
+  if (needle) needle.style.transform = `rotate(${bearing}deg)`;
+  const btn = document.getElementById('compassBtn');
+  if (btn) btn.classList.toggle('rotated', Math.abs(bearing) > 0.5);
+
+});
+
+// zoomanim handled by canvas scheduleEdgeDraw (subscribed above)
+
+
+// Palet warna fallback
+const CLIENT_COLORS=[
+  '#ffffff','#a78bfa','#22c55e','#f472b6','#38bdf8',
+  '#fb923c','#4ade80','#e879f9','#facc15','#94a3b8'
+];
+let clientColorMap={};
+
+function assignClientColor(name){
+  const n=(name||'').toUpperCase();
+  if(n.includes('TELEKOMUNIKASI SELULAR')||n.includes('TELKOMSEL')) return '#ff1a1a';
+  if(n.includes('XLSMART')) return '#1a8cff';
+  if(n.includes('INDOSAT')) return '#ffe600';
+  return null;
+}
+
+/* =======================================================
+   HELPERS
+/* ======================================================= */
+const M={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+function expStatus(d){
+  if(!d) return 'unknown';
+  const p=d.split('-'); if(p.length<3) return 'unknown';
+  const dt=new Date(+p[2],M[p[1]?.toUpperCase()]??0,+p[0]);
+  const diff=(dt-new Date())/86400000;
+  return diff<0?'expired':diff<180?'soon':'active';
+}
+function chipHtml(d){
+  const s=expStatus(d);
+  const label={active:'GRANTED',expired:'EXPIRED',soon:'SEGERA HABIS',unknown:'\u2014'}[s];
+  const cls={active:'chip-ok',expired:'chip-exp',soon:'chip-soon',unknown:''}[s];
+  return `<span class="chip ${cls}">${label}${d?' \u00B7 '+d:''}</span>`;
+}
+function fmtFreq(v){ return v!=null?v+' MHz':'\u2014'; }
+
+function esc(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function dmsToDecimal(deg,min,sec,dir){
+  if(deg==null||deg===''||deg===undefined) return null;
+  const d=parseFloat(deg);
+  if(isNaN(d)) return null;
+  const m=parseFloat(min)||0;
+  const s=parseFloat(sec)||0;
+  if(d===0&&m===0&&s===0) return null;
+  let dd=d+m/60+s/3600;
+  if(dir==='S'||dir==='W') dd=-dd;
+  return isNaN(dd)?null:dd;
+}
+
+function haversineM(lat1,lon1,lat2,lon2){
+  const R=6371000,dl=(lat2-lat1)*Math.PI/180,dg=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dl/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dg/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function nameSimilarity(a,b){
+  if(!a||!b) return 0;
+  a=a.toLowerCase().replace(/[^a-z0-9]/g,'');
+  b=b.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(a===b) return 1;
+  let common=0;
+  for(let i=0;i<Math.min(a.length,b.length);i++){ if(a[i]===b[i]) common++; else break; }
+  return common/Math.max(a.length,b.length);
+}
+
+function addrNorm(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim(); }
+
+function stnNorm(s){
+  if(!s) return '';
+  const parts=s.split('_');
+  const seen=new Set();
+  const deduped=parts.filter(p=>{
+    const k=p.toLowerCase().replace(/\s+/g,'');
+    if(seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+  return addrNorm(deduped.join(' '));
+}
+
+function addrWordOverlap(a,b){
+  if(!a||!b) return 0;
+  const wa=new Set(addrNorm(a).split(' ').filter(w=>w.length>3));
+  const wb=new Set(addrNorm(b).split(' ').filter(w=>w.length>3));
+  if(!wa.size||!wb.size) return 0;
+  let overlap=0;
+  wa.forEach(w=>{ if(wb.has(w)) overlap++; });
+  return overlap/Math.min(wa.size,wb.size);
+}
+
+function stnWordOverlap(a,b){
+  if(!a||!b) return 0;
+  const wa=new Set(stnNorm(a).split(' ').filter(w=>w.length>2));
+  const wb=new Set(stnNorm(b).split(' ').filter(w=>w.length>2));
+  if(!wa.size||!wb.size) return 0;
+  let overlap=0;
+  wa.forEach(w=>{
+    if(wb.has(w)){ overlap++; }
+    else{ for(const wb2 of wb){ if(wb2.startsWith(w)||w.startsWith(wb2)){ overlap+=0.7; break; } } }
+  });
+  return overlap/Math.min(wa.size,wb.size);
+}
+
+function siteHasSimilarLawan(site,lawan){
+  if(!lawan) return false;
+  const la=stnNorm(lawan);
+  return site.isr.some(r=>{
+    if(!r.stasiun_lawan) return false;
+    const lb=stnNorm(r.stasiun_lawan);
+    if(la===lb) return true;
+    return stnWordOverlap(lawan,r.stasiun_lawan)>=0.6;
+  });
+}
+
+/* =======================================================
+   TOWER CLUSTERING
+/* ======================================================= */
+const MAX_DIST=100;
+// Jarak maksimum (meter) untuk menggabungkan site dari klien berbeda jadi 1 node fisik
+const CROSS_CLUSTER_DIST=20;
+
+function clusterISRtoSites(rows){
+  const sites=[];
+  rows.forEach(isr=>{
+    const lat=isr.sid_lat?parseFloat(isr.sid_lat):null;
+    const lng=isr.sid_long?parseFloat(isr.sid_long):null;
+    if(lat===null||lng===null||isNaN(lat)||isNaN(lng)) return;
+    let best=null,bestScore=-1;
+    for(const site of sites){
+      const dist=haversineM(lat,lng,site.lat,site.lng);
+      if(dist>MAX_DIST) continue;
+      let score=0;
+      if(dist<20) score=100;
+      else{
+        const nsBest=site.isr.length?Math.max(...site.isr.map(r=>nameSimilarity(isr.stn_name,r.stn_name))):0;
+        if(nsBest>=0.7) score=Math.max(score,60+Math.round(nsBest*20));
+        const addrOverlapBest=site.isr.length?Math.max(...site.isr.map(r=>addrWordOverlap(isr.stn_addr,r.stn_addr))):0;
+        if(addrOverlapBest>=0.5) score=Math.max(score,60+Math.round(addrOverlapBest*30));
+        if(siteHasSimilarLawan(site,isr.stasiun_lawan)) score=Math.max(score,75);
+        if(isr.stasiun_lawan&&site.isr.some(r=>r.stasiun_lawan===isr.stasiun_lawan)) score=Math.max(score,80);
+      }
+      if(score>bestScore){ bestScore=score; best=site; }
+    }
+    if(best&&bestScore>0){
+      best.isr.push(isr);
+      const n=best.isr.length;
+      best.lat=(best.lat*(n-1)+lat)/n;
+      best.lng=(best.lng*(n-1)+lng)/n;
+    } else {
+      sites.push({
+        id:'S'+sites.length,lat,lng,
+        label:isr.stn_addr?isr.stn_addr.replace(/,.*$/,'').trim().substring(0,30):(isr.stn_name||'Site'),
+        isr:[isr],ghost:false,marker:null
+      });
+    }
+  });
+
+  const ghostSites=[];
+  rows.forEach(isr=>{
+    const toLat=dmsToDecimal(isr.to_lat_deg,isr.to_lat_min,isr.to_lat_sec,isr.to_lat_dir_ind);
+    const toLng=dmsToDecimal(isr.to_long_deg,isr.to_long_min,isr.to_long_sec,isr.to_long_dir_ind);
+    if(toLat===null||toLng===null) return;
+    const nearSite=sites.find(t=>haversineM(toLat,toLng,t.lat,t.lng)<MAX_DIST);
+    if(nearSite) return;
+    if(isr.stasiun_lawan){
+      const lawanNorm=stnNorm(isr.stasiun_lawan);
+      const nameMatch=sites.find(t=>{
+        if(t.isr.some(r=>r.id===isr.id)) return false;
+        return t.isr.some(r=>{
+          if(!r.stn_name) return false;
+          if(stnNorm(r.stn_name)===lawanNorm) return true;
+          return stnWordOverlap(r.stn_name,isr.stasiun_lawan)>=0.6;
+        });
+      });
+      if(nameMatch) return;
+    }
+    const existGhost=ghostSites.find(t=>haversineM(toLat,toLng,t.lat,t.lng)<MAX_DIST);
+    if(existGhost){
+      if(!existGhost.isr.some(r=>r._ghost_ref_simf===isr.no_simf&&r._ghost_ref_lawan===isr.stasiun_lawan))
+        existGhost.isr.push({stn_name:isr.stasiun_lawan,_is_ghost:true,_ghost_ref_simf:isr.no_simf,
+          _ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr});
+      return;
+    }
+    ghostSites.push({
+      id:'G'+ghostSites.length,lat:toLat,lng:toLng,
+      label:isr.stasiun_lawan||'Ghost Site',
+      isr:[{stn_name:isr.stasiun_lawan,_is_ghost:true,
+        _ghost_ref_simf:isr.no_simf,_ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr}],
+      ghost:true,marker:null
+    });
+  });
+  return [...sites,...ghostSites];
+}
+
+/* =======================================================
+   MWLINK PAIRING
+/* ======================================================= */
+function buildMWLinks(sites,rows){
+  const edges=new Map();
+  const isrToSite=new Map();
+  sites.filter(s=>!s.ghost).forEach(s=>s.isr.forEach(r=>isrToSite.set(r.id,s)));
+  rows.forEach(isr=>{
+    const sA=isrToSite.get(isr.id);
+    if(!sA) return;
+    let sB=null,method='solo';
+    if(isr.link_id!==null){
+      for(const s of sites){ if(s.id===sA.id||s.ghost) continue; if(s.isr.some(r=>r.link_id==isr.link_id)){ sB=s;method='link_id';break; } }
+      if(!sB){ for(const s of sites){ if(s.id===sA.id||!s.ghost) continue; if(s.isr.some(r=>r.parent_isr&&r.parent_isr.link_id==isr.link_id)){ sB=s;method='link_id';break; } } }
+      if(!sB){
+        const toLat=dmsToDecimal(isr.to_lat_deg,isr.to_lat_min,isr.to_lat_sec,isr.to_lat_dir_ind);
+        const toLng=dmsToDecimal(isr.to_long_deg,isr.to_long_min,isr.to_long_sec,isr.to_long_dir_ind);
+        if(toLat!==null&&toLng!==null){
+          for(const s of sites){ if(s.id===sA.id||!s.ghost) continue; if(haversineM(toLat,toLng,s.lat,s.lng)<MAX_DIST){ sB=s;method='ghost_coord';break; } }
+          if(!sB){ for(const s of sites){ if(s.id===sA.id||s.ghost) continue; if(haversineM(toLat,toLng,s.lat,s.lng)<MAX_DIST){ sB=s;method='coord_real';break; } } }
+          if(!sB&&isr.stasiun_lawan){
+            const lawanNorm=stnNorm(isr.stasiun_lawan);
+            for(const s of sites){ if(s.id===sA.id) continue; if(s.isr.some(r=>r.stn_name&&(stnNorm(r.stn_name)===lawanNorm||stnWordOverlap(r.stn_name,isr.stasiun_lawan)>=0.6))){ sB=s;method='name_fallback';break; } }
+          }
+        }
+      }
+    }
+    if(!sB) return;
+    const edgeKey=[sA.id,sB.id].sort().join('|');
+    const isInferred=method==='ghost_coord'||method==='coord_real'||method==='name_fallback';
+    if(!edges.has(edgeKey)) edges.set(edgeKey,{id:edgeKey,siteA:sA.id<sB.id?sA:sB,siteB:sA.id<sB.id?sB:sA,mwlinks:[],ghost:sB.ghost||isInferred,line:null});
+    const e=edges.get(edgeKey);
+    if(!e.mwlinks.find(m=>m.link_id==isr.link_id&&m.link_id!==null)){
+      e.mwlinks.push({link_id:isr.link_id,freq_tx:isr.freq,freq_rx:isr.freq_pair,
+        no_simf:isr.no_simf,appl_id:isr.appl_id,validity:isr.validity_date,
+        circuit_len:isr.circuit_len,azim:isr.azim,eq_mfr:isr.eq_mfr,eq_mdl:isr.eq_mdl,
+        stn_name:isr.stn_name,stasiun_lawan:isr.stasiun_lawan,trans_type:isr.trans_type,
+        h_asl:isr.h_asl,hgt_ant:isr.hgt_ant,erp:isr.erp_pwr_dbm,
+        status_simf:isr.status_simf,licence_date:isr.licence_date,appl_date:isr.appl_date,
+        umur_isr:isr.umur_isr,city:isr.city,province:isr.province,
+        method,_isr_id:isr.id,_src_site_id:sA.id});
+    }
+  });
+  const edgeArr=[...edges.values()];
+  // hitung linkCount per site (jumlah MW link unik yang melibatkan site ini)
+  edgeArr.forEach(e=>{
+    const cnt=e.mwlinks.length;
+    e.siteA.linkCount=(e.siteA.linkCount||0)+cnt;
+    e.siteB.linkCount=(e.siteB.linkCount||0)+cnt;
+  });
+  return edgeArr;
+}
+
+/* =======================================================
+   ICONS \u2014 warna per klien
+/* ======================================================= */
+function mkSiteIcon(count,ghost,active,color){
+  color=color||'#00e5ff';
+  if(ghost){
+    // Ghost: hexagon outline dashed
+    const op=active?0.25:0.12;
+    const sw=active?2:1.5;
+    return L.divIcon({
+      html:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="${color}" fill-opacity="${op}" stroke="${color}" stroke-width="${sw}" stroke-dasharray="4 2.5" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="2.5" fill="${color}" fill-opacity=".6"/>
+      </svg>`,
+      className:'',iconSize:[24,24],iconAnchor:[12,12],tooltipAnchor:[13,0]
+    });
+  }
+  const label=count>99?'99+':String(count);
+  const sz=count>9?36:count>3?30:26;
+  const fs=count>99?7:count>9?9:11;
+  const r=sz/2;
+  const ir=r-5; // inner radius for pin shape
+  // Hexagon pin shape
+  const pts6=(R)=>{
+    let pts='';
+    for(let i=0;i<6;i++){
+      const a=(i*60-90)*Math.PI/180;
+      pts+=(r+R*Math.cos(a)).toFixed(2)+','+(r+R*Math.sin(a)).toFixed(2)+' ';
+    }
+    return pts.trim();
+  };
+  const glowOp=active?0.4:0.15;
+  const fillOp=active?0.95:0.88;
+  const shadow=active?`<polygon points="${pts6(r-0.5)}" fill="${color}" fill-opacity="0.18" stroke="none"/>`:'' ;
+  return L.divIcon({
+    html:`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
+      ${shadow}
+      <polygon points="${pts6(r-1.5)}" fill="${color}" fill-opacity="${glowOp}" stroke="${color}" stroke-width="${active?2:1.2}" stroke-linejoin="round"/>
+      <polygon points="${pts6(ir)}" fill="${color}" fill-opacity="${fillOp}" stroke="none"/>
+      <text x="${r}" y="${r+fs*0.35}" text-anchor="middle" font-size="${fs}" fill="#000" font-weight="800" font-family="monospace" letter-spacing="-0.5">${label}</text>
+    </svg>`,
+    className:'',iconSize:[sz,sz],iconAnchor:[r,r],tooltipAnchor:[r+2,0]
+  });
+}
+
+function mkPieIcon(count,colors,active){
+  const label=count>99?'99+':String(count);
+  const sz=count>9?36:count>3?30:26;
+  const R=sz/2, fs=count>99?7:count>9?9:11;
+  const n=colors.length;
+  // helper: hexagon points at radius r centered at R,R
+  const hex=(r)=>{let p='';for(let i=0;i<6;i++){const a=(i*60-90)*Math.PI/180;p+=(R+r*Math.cos(a)).toFixed(2)+','+(R+r*Math.sin(a)).toFixed(2)+' ';}return p.trim();};
+  const outerR=R-1.5, innerR=Math.max(R-6,5);
+  let paths='';
+  if(n===1){
+    paths=`<polygon points="${hex(outerR)}" fill="${colors[0]}" fill-opacity="${active?.4:.18}" stroke="${colors[0]}" stroke-width="${active?2:1.2}" stroke-linejoin="round"/>`;
+    paths+=`<polygon points="${hex(innerR)}" fill="${colors[0]}" fill-opacity="${active?.92:.85}" stroke="none"/>`;
+  } else {
+    // pie slices clipped to hexagon via clipPath
+    const cid='cp'+Math.random().toString(36).slice(2,7);
+    paths+=`<defs><clipPath id="${cid}"><polygon points="${hex(outerR)}"/></clipPath></defs>`;
+    const slice=2*Math.PI/n;
+    for(let i=0;i<n;i++){
+      const a1=i*slice-Math.PI/2, a2=(i+1)*slice-Math.PI/2;
+      const x1=R+outerR*Math.cos(a1), y1=R+outerR*Math.sin(a1);
+      const x2=R+outerR*Math.cos(a2), y2=R+outerR*Math.sin(a2);
+      const large=slice>Math.PI?1:0;
+      paths+=`<path d="M${R},${R} L${x1.toFixed(2)},${y1.toFixed(2)} A${outerR},${outerR} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${colors[i]}" clip-path="url(#${cid})"/>`;
+    }
+    paths+=`<polygon points="${hex(outerR)}" fill="none" stroke="#00000033" stroke-width="0.5" stroke-linejoin="round"/>`;
+    paths+=`<polygon points="${hex(innerR)}" fill="#141920" stroke="none"/>`;
+  }
+  const textFill=n===1?'#000':'#fff';
+  const html=`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${paths}<text x="${R}" y="${R+fs*0.35}" text-anchor="middle" font-size="${fs}" fill="${textFill}" font-weight="800" font-family="monospace" letter-spacing="-0.5">${label}</text></svg>`;
+  return L.divIcon({html,className:'',iconSize:[sz,sz],iconAnchor:[R,R],tooltipAnchor:[R+2,0]});
+}
+
+function applySharedSiteIcons(activeIds){
+  // Kumpulkan semua site real dari klien aktif
+  const allSites=[];
+  activeIds.forEach(clntId=>{
+    const data=allLayersData[clntId];
+    if(!data) return;
+    data.sites.forEach(site=>{
+      if(!site.marker||site.ghost) return;
+      allSites.push({clntId,site});
+    });
+  });
+  // Clustering greedy berdasarkan haversine < CROSS_CLUSTER_DIST (tower fisik yang sama)
+  const clusters=[];
+  allSites.forEach(entry=>{
+    let target=null;
+    for(const c of clusters){
+      if(haversineM(entry.site.lat,entry.site.lng,c.lat,c.lng)<CROSS_CLUSTER_DIST){ target=c; break; }
+    }
+    if(target){
+      target.entries.push(entry);
+      const n=target.entries.length;
+      target.lat=(target.lat*(n-1)+entry.site.lat)/n;
+      target.lng=(target.lng*(n-1)+entry.site.lng)/n;
+    } else {
+      clusters.push({lat:entry.site.lat,lng:entry.site.lng,entries:[entry]});
+    }
+  });
+  clusters.forEach(c=>{
+    const entries=c.entries;
+    if(entries.length<2) return;
+    const colors=[...new Set(entries.map(e=>clientColorMap[e.clntId]||'#ffffff'))];
+    const totalLinks=entries.reduce((s,e)=>s+(e.site.linkCount||e.site.isr.length),0);
+    const isActive=entries.some(e=>e.site.id===activeSiteId);
+    const icon=mkPieIcon(totalLinks,colors,isActive);
+    entries[0].site.marker.setIcon(icon);
+    entries[0].site._sharedWith=entries.slice(1).map(e=>e.site.id);
+    for(let i=1;i<entries.length;i++){
+      if(markerLayer.hasLayer(entries[i].site.marker))
+        markerLayer.removeLayer(entries[i].site.marker);
+      entries[i].site._hiddenByShared=entries[0].site.id;
+    }
+  });
+}
+
+
+/* ======================================================= */
+let currentSites=[], currentEdges=[];
+
+function renderAllVisible(skipFit=false){
+  // Reset referensi marker/line di semua cache sebelum clear
+  Object.values(allLayersData).forEach(data=>{
+    data.sites.forEach(s=>{ s.marker=null; });
+    data.edges.forEach(e=>{ e.line=null; e.hitbox=null; e.labelMarker=null; });
+  });
+  mapLayers.clearLayers();
+  edgeLayer.clearLayers();
+  _edgeDrawData = [];
+  markerLayer.clearLayers();
+  linkLabelsLayer.clearLayers();
+  skeletonLayer.clearLayers();
+  sitesIndex={}; edgesIndex={};
+  currentSites=[]; currentEdges=[];
+
+  const overlay=document.getElementById('stateOverlay');
+  const activeIds=[...selectedIds];
+
+  if(!activeIds.length){
+    overlay.style.display='flex';
+    overlay.innerHTML='<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Pilih klien untuk melihat peta</span>';
+    updateFooter();
+    return;
+  }
+  overlay.style.display='none';
+
+  const bounds=[];
+
+  activeIds.forEach(clntId=>{
+    const data=allLayersData[clntId];
+    if(!data) return;
+    const color=clientColorMap[clntId]||'#00e5ff';
+
+    data.sites.forEach(site=>{
+      const m=L.marker([site.lat,site.lng],{icon:mkSiteIcon(site.linkCount||site.isr.length,site.ghost,false,color)});
+      const tipText=site.ghost
+        ?`<b>${esc(site.label)}</b><br><span style="color:${color}">Ghost site</span>`
+        :`<b>${esc(site.label)}</b><br>${site.linkCount||site.isr.length} MW Link`;
+      m.bindTooltip(tipText,{className:'lf-tooltip',direction:'right',offset:[12,0]});
+      m.on('click',(ev)=>{ L.DomEvent.stopPropagation(ev); selectSite(site.id); });
+      site.marker=m; sitesIndex[site.id]=site;
+      bounds.push([site.lat,site.lng]);
+    });
+
+    data.edges.forEach(e=>{
+      const a=e.siteA,b=e.siteB;
+      const lineColor=e.ghost?color+'88':color+'cc';
+      // Simpan data untuk canvas draw
+      _edgeDrawData.push({
+        color:lineColor,weight:e.ghost?2:3,ghost:e.ghost,
+        lat1:a.lat,lng1:a.lng,lat2:b.lat,lng2:b.lng,
+        siteAId:a.id,siteBId:b.id
+      });
+      // Hitbox invisible untuk klik — ringan, tidak ada visual
+      const hitbox=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{
+        color:'transparent',weight:20,opacity:0.001,
+        interactive:true,bubblingMouseEvents:false
+      }).addTo(edgeLayer);
+      hitbox.bindTooltip(`<b>${e.mwlinks.length} MWLink</b><br>${esc(a.label)} \u2194 ${esc(b.label)}`,
+        {className:'lf-tooltip',direction:'top',sticky:true});
+      const onLineClick=(ev)=>{ L.DomEvent.stopPropagation(ev); selectSite(a.id); };
+      hitbox.on('click', onLineClick);
+      e.line=null; e.hitbox=hitbox; edgesIndex[e.id]=e;
+
+      // Label angka di tengah garis
+      const midLat=(a.lat+b.lat)/2, midLng=(a.lng+b.lng)/2;
+      const n=e.mwlinks.length;
+      const lbl=L.marker([midLat,midLng],{
+        icon:L.divIcon({
+          html:`<div class="link-count-label">${n}</div>`,
+          className:'',iconSize:[20,16],iconAnchor:[10,8]
+        }),
+        interactive:false,zIndexOffset:-100
+      }).addTo(linkLabelsLayer);
+      e.labelMarker=lbl;
+    });
+
+    currentSites.push(...data.sites);
+    currentEdges.push(...data.edges);
+  });
+
+  if(bounds.length&&!skipFit) map.fitBounds(bounds,{padding:[50,50],maxZoom:14});
+  refreshMarkers();
+  applySharedSiteIcons([...selectedIds]);
+  requestAnimationFrame(()=>updateLinkLabels(null));
+  // Trigger canvas draw sesuai state toggle saat ini
+  edgeCanvasVisible = showLinks;
+  scheduleEdgeDraw();
+  updateFooter();
+}
+
+// Viewport culling \u2014 hanya render marker dalam bounds + sedikit buffer
+function refreshMarkers(){
+  if(!currentSites.length) return;
+  const bounds=map.getBounds().pad(0.15); // 15% buffer di luar viewport
+  markerLayer.clearLayers();
+  currentSites.forEach(site=>{
+    if(!site.marker) return;
+    if(bounds.contains([site.lat,site.lng])){
+      // update icon kalau site ini sedang aktif
+      const clntId=findClientOfSite(site.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      site.marker.setIcon(mkSiteIcon(site.linkCount||site.isr.length,site.ghost,site.id===activeSiteId,color));
+      markerLayer.addLayer(site.marker);
+    }
+  });
+  applySharedSiteIcons([...selectedIds]);
+}
+map.on('moveend zoomend', refreshMarkers);
+
+function updateLegend(){
+  const activeIds=[...selectedIds];
+  const legendInner=document.getElementById('legendInner');
+  if(legendInner){
+    legendInner.innerHTML=activeIds.map(id=>{
+      const c=allClients.find(x=>x.clnt_id==id);
+      const col=clientColorMap[id]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+      return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div><span>${esc(name)}</span></div>`;
+    }).join('');
+  }
+}
+
+function updateLinkVisibility(){
+  // edgeLayer show/hide sudah ditangani toggle handler
+  // fungsi ini hanya update hitbox interactivity
+  currentEdges.forEach(e=>{
+    if(e.hitbox&&e.hitbox._path){
+      e.hitbox._path.style.pointerEvents=showLinks?'':'none';
+    }
+  });
+}
+
+function updateLinkLabels(activeSiteId){
+  currentEdges.forEach(e=>{
+    if(!e.labelMarker) return;
+    const isConn=activeSiteId&&(e.siteA.id===activeSiteId||e.siteB.id===activeSiteId);
+    const noSelection=!activeSiteId;
+    const el=e.labelMarker.getElement()?.querySelector('.link-count-label');
+    if(el){
+      // toggle off + node dipilih: label terhubung tetap muncul, lainnya sembunyi
+      // toggle off + tidak ada node: semua sembunyi
+      // toggle on: semua muncul (connected terang, lainnya redup)
+      let op=0;
+      if(showLinks) op=noSelection||isConn?1:.25;
+      else if(isConn) op=1; // toggle off tapi node terhubung \u2192 tampil
+      el.style.opacity=op;
+      el.style.fontWeight=isConn?'700':'400';
+      el.style.borderColor=isConn?'currentColor':'rgba(255,255,255,.2)';
+    }
+  });
+}
+
+/* =======================================================
+   SELECT SITE & PANEL
+/* ======================================================= */
+function selectSite(siteId,fromGoto=false){
+  currentSites.forEach(s=>{
+    if(s.marker){
+      const clntId=findClientOfSite(s.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,s.id===siteId,color));
+    }
+  });
+  activeSiteId=siteId; openLinkId=null;
+  const site=sitesIndex[siteId];
+  if(!site){ closePanel(); return; }
+
+  // Kumpulkan semua siteId yang share koordinat ini (multi-klien)
+  const sharedSiteIds=new Set([siteId]);
+  if(!site.ghost){
+    findAllClientsOfCoord(site).forEach(({site:cs})=>sharedSiteIds.add(cs.id));
+  }
+
+  // Kumpulkan semua edge dari semua klien yang share koordinat
+  const allEdgesHere=[];
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId)) continue;
+    data.edges.forEach(e=>{
+      if(sharedSiteIds.has(e.siteA.id)||sharedSiteIds.has(e.siteB.id)) allEdgesHere.push({e,clntId:+clntId});
+    });
+  }
+  const connectedEdgeIds=new Set(allEdgesHere.map(({e})=>e.id));
+
+  currentEdges.forEach(e=>{
+    const isConnected=connectedEdgeIds.has(e.id);
+    if(e.line){
+      const clntId=findClientOfSite(e.siteA.id)||findClientOfSite(e.siteB.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      const opConn=1;
+      const opOther=showLinks?0.15:0;
+      e.line.setStyle({
+        color:e.ghost?color+'88':color+'cc',
+        opacity:isConnected?opConn:opOther,
+        weight:isConnected?4:e.ghost?2:3,
+        dashArray:e.ghost?'8 5':'8 4 2 4'
+      });
+    }
+  });
+  // pastikan edgeLayer & linkLabelsLayer tampil saat node dipilih, walau toggle off
+  if(!map.hasLayer(edgeLayer)) edgeLayer.addTo(map);
+  // Hanya gambar garis yang terhubung ke node ini
+  _activeDrawSiteIds = sharedSiteIds;
+  edgeCanvasVisible=true; scheduleEdgeDraw();
+  if(!map.hasLayer(linkLabelsLayer)) linkLabelsLayer.addTo(map);
+  updateLinkLabels(siteId);
+  if(fromGoto) map.panTo([site.lat,site.lng],{animate:true});
+  // Selalu re-render panel body agar data terbaru tampil
+  document.getElementById('panelBody').innerHTML='';
+  showSitePanel(site);
+}
+
+function findClientOfSite(siteId){
+  // cari di klien yang sedang dipilih dulu
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId)) continue;
+    if(data.sites.find(s=>s.id===siteId)) return +clntId;
+  }
+  // fallback ke semua cache
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(data.sites.find(s=>s.id===siteId)) return +clntId;
+  }
+  return null;
+}
+
+// Kembalikan semua klien yang punya site di tower fisik yang sama (jarak < CROSS_CLUSTER_DIST)
+function findAllClientsOfCoord(site){
+  const result=[];
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId)) continue;
+    const match=data.sites.find(s=>!s.ghost&&haversineM(s.lat,s.lng,site.lat,site.lng)<CROSS_CLUSTER_DIST);
+    if(match) result.push({clntId:+clntId,site:match});
+  }
+  return result;
+}
+
+function showSitePanel(site){
+  const clntId=findClientOfSite(site.id);
+  const siteColor=clientColorMap[clntId]||'#00e5ff';
+  document.getElementById('panelTitle').textContent=site.label;
+  document.getElementById('panelBreadcrumb').style.display='none';
+  document.getElementById('detailPanel').classList.add('open');
+  document.querySelector('.app').classList.add('panel-open');
+  document.getElementById('panelBody').scrollTop=0;
+
+  if(site.ghost){
+    document.getElementById('panelTabs').style.display='none';
+    const refs=site.isr.filter(r=>r._is_ghost);
+    document.getElementById('panelSub').textContent=`Ghost site \u00B7 ${refs.length} link masuk`;
+    document.getElementById('panelBody').innerHTML=`
+      <p style="color:var(--muted);font-size:12px;margin-bottom:12px">
+        Koordinat dari kolom <code style="color:var(--accent3)">to_lat/to_long</code> \u2014 site ini tidak ada di database klien ini.
+      </p>
+      ${refs.map(r=>{
+        const p=r.parent_isr;
+        return `<div class="lawan-group">
+          <div class="lawan-header-static">
+            <div class="lawan-dot" style="background:${siteColor}"></div>
+            <div class="lawan-name">${esc(p?.stn_name)||'\u2014'}</div>
+            <span class="lawan-count">Link ID: ${esc(p?.link_id)||'\u2014'}</span>
+          </div>
+          <div class="lawan-links">
+            <div class="link-row">
+              <div class="isr-pair-grid">
+                <div class="isr-half">
+                  <div class="isr-half-label">ISR lawan (sumber)</div>
+                  <div class="isr-half-stn">${esc(p?.stn_name)||'\u2014'}</div>
+                  <div class="isr-half-simf">${esc(p?.no_simf)||'\u2014'}</div>
+                  <div class="isr-half-freq"><span class="pill-tx">TX</span> ${fmtFreq(p?.freq)}</div>
+                </div>
+                <div class="isr-half isr-half-ghost">
+                  <div class="isr-half-label">ISR ini (ghost)</div>
+                  <div class="isr-half-stn" style="color:var(--muted)">\u2014</div>
+                  <div class="isr-half-freq" style="color:var(--muted)">Tidak ada di DB</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}`;
+    requestAnimationFrame(()=>{ updatePanelHeight(); setTimeout(updatePanelHeight,300); });
+    return;
+  }
+
+  // Kumpulkan semua klien yang share koordinat node ini
+  const sharedClients=findAllClientsOfCoord(site);
+  // Jika hanya 1 klien, sembunyikan tab
+  const showTabs=sharedClients.length>1;
+  const tabsEl=document.getElementById('panelTabs');
+  tabsEl.style.display=showTabs?'flex':'none';
+
+  // Hitung total semua klien
+  let totalEdges=0,totalLinks=0;
+  sharedClients.forEach(({clntId:cid,site:cs})=>{
+    const edges=currentEdges.filter(e=>(e.siteA.id===cs.id||e.siteB.id===cs.id));
+    totalEdges+=edges.length;
+    totalLinks+=edges.reduce((s,e)=>s+e.mwlinks.length,0);
+  });
+  document.getElementById('panelSub').textContent=`${totalEdges} node lawan \u00B7 ${totalLinks} MW link`;
+
+  // Build tab headers
+  if(showTabs){
+    tabsEl.innerHTML=sharedClients.map(({clntId:cid},ti)=>{
+      const c=allClients.find(x=>x.clnt_id==cid);
+      const col=clientColorMap[cid]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,3).join(' '):cid;
+      return `<div class="panel-tab${ti===0?' active':''}" id="ptab-${cid}"
+        style="--tab-color:${col}"
+        onclick="switchPanelTab(${cid})">
+        <span class="panel-tab-dot"></span>${esc(name)}
+      </div>`;
+    }).join('');
+  }
+
+  // Build content per klien
+  const bodyEl=document.getElementById('panelBody');
+  bodyEl.innerHTML=sharedClients.map(({clntId:cid,site:cs},ti)=>{
+    const col=clientColorMap[cid]||'#00e5ff';
+    const myEdges=allLayersData[cid]
+      ? allLayersData[cid].edges.filter(e=>e.siteA.id===cs.id||e.siteB.id===cs.id)
+      : currentEdges.filter(e=>e.siteA.id===cs.id||e.siteB.id===cs.id);
+
+    const groupsHtml=myEdges.map((e,ei)=>{
+      const partner=e.siteA.id===cs.id?e.siteB:e.siteA;
+      const partnerClntId=findClientOfSite(partner.id);
+      const partnerColor=clientColorMap[partnerClntId]||col;
+      const gid=`pg-${cid}-${ei}`;
+
+      const linksHtml=e.mwlinks.map((mw,idx)=>{
+        const mid=`${e.id}_${idx}_${cid}`.replace(/\|/g,'__');
+        const safeEid=e.id.replace(/\|/g,'__');
+
+        // mw.* berasal dari ISR salah satu sisi (_src_site_id). Tentukan sisi mana
+        // itu, lalu cari data sisi lain (otherIsr) agar "asal"/"lawan" sesuai cs.
+        const srcSite=mw._src_site_id===cs.id?cs:partner;
+        const otherSite=srcSite===cs?partner:cs;
+        const otherIsr=otherSite.isr.find(r=>r.link_id==mw.link_id)||
+                       otherSite.isr.find(r=>r._is_ghost&&r.parent_isr?.link_id==mw.link_id);
+
+        const srcData={
+          simf:mw.no_simf||'\u2014',
+          freqTx:fmtFreq(mw.freq_tx),
+          freqRx:fmtFreq(mw.freq_rx),
+          stn:mw.stn_name||srcSite.label
+        };
+        const otherData=(otherIsr&&!otherIsr._is_ghost)?{
+          simf:otherIsr.no_simf||'\u2014',
+          freqTx:fmtFreq(otherIsr.freq),
+          freqRx:fmtFreq(otherIsr.freq_pair),
+          stn:otherIsr.stn_name||otherSite.label
+        }:{
+          simf:mw.stasiun_lawan||'\u2014',
+          freqTx:fmtFreq(mw.freq_rx),
+          freqRx:fmtFreq(mw.freq_tx),
+          stn:otherSite.label
+        };
+
+        const asalData=srcSite===cs?srcData:otherData;
+        const lawanData=srcSite===cs?otherData:srcData;
+
+        const statusSimf=mw.status_simf||(mw.validity?({active:'AKTIF',expired:'KADALUARSA',soon:'SEGERA HABIS',unknown:'\u2014'}[expStatus(mw.validity)]):'\u2014');
+        const statusCls={AKTIF:'good','KADALUARSA':'danger','SEGERA HABIS':'warn'}[statusSimf]||'';
+        const infoBar=`
+          <div class="link-info-bar">
+            <div class="info-chip"><span class="info-chip-label">Azimuth</span><span class="info-chip-val">${mw.azim!=null?mw.azim+'\u00B0':'\u2014'}</span></div>
+            <div class="info-chip" title="Dihitung dari koordinat node (haversine)"><span class="info-chip-label">Jarak</span><span class="info-chip-val">${(cs.lat&&cs.lng&&partner.lat&&partner.lng)?((haversineM(cs.lat,cs.lng,partner.lat,partner.lng)/1000).toFixed(2)+' km'):'\u2014'}</span></div>
+            <div class="info-chip"><span class="info-chip-label">Status ISR</span><span class="info-chip-val ${statusCls}">${esc(statusSimf)}</span></div>
+            <div class="info-chip"><span class="info-chip-label">Berlaku s.d.</span><span class="info-chip-val ${expStatus(mw.validity)==='expired'?'danger':expStatus(mw.validity)==='soon'?'warn':''}">${esc(mw.validity)||'\u2014'}</span></div>
+          </div>`;
+        const antSpecs=`
+          <div class="ant-specs">
+            <div class="ant-half">
+              <div class="ant-half-label">Antena</div>
+              <div class="ant-row"><span class="ant-key">H-ASL</span><span class="ant-val">${mw.h_asl!=null?mw.h_asl+' m':'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">Tinggi ant.</span><span class="ant-val">${mw.hgt_ant!=null?mw.hgt_ant+' m':'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">ERP</span><span class="ant-val">${mw.erp!=null?mw.erp+' dBm':'\u2014'}</span></div>
+            </div>
+            <div class="ant-half">
+              <div class="ant-half-label">Perangkat</div>
+              <div class="ant-row"><span class="ant-key">Mfr</span><span class="ant-val">${esc(mw.eq_mfr)||'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">Model</span><span class="ant-val">${esc(mw.eq_mdl)||'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">Trans</span><span class="ant-val">${esc(mw.trans_type)||'\u2014'}</span></div>
+            </div>
+          </div>`;
+        const extraGrid=[
+          mw.licence_date?`<span class="k">Tgl. Lisensi</span><span class="v">${esc(mw.licence_date)}</span>`:'',
+          mw.appl_date?`<span class="k">Tgl. Daftar</span><span class="v">${esc(mw.appl_date)}</span>`:'',
+          mw.umur_isr?`<span class="k">Umur ISR</span><span class="v">${esc(mw.umur_isr)}</span>`:'',
+          (mw.city||mw.province)?`<span class="k">Lokasi</span><span class="v">${esc([mw.city,mw.province].filter(Boolean).join(', '))}</span>`:'',
+        ].filter(Boolean).join('');
+        return `
+          <div class="link-row" id="mwi-${mid}">
+            <div class="link-id-row" onclick="toggleMWLink('${mid}','${safeEid}','${partner.id}')">
+              <span class="link-badge" style="color:${col};background:${col}18;border-color:${col}40">
+                LINK ID \u00B7 ${esc(mw.link_id)||'\u2014'}
+              </span>
+              <i class="ti ti-chevron-down mw-chevron" id="mwc-${mid}" style="margin-left:auto;color:var(--muted);font-size:13px"></i>
+            </div>
+            <div class="isr-pair-grid">
+              <div class="isr-half">
+                <div class="isr-half-label">Stasiun asal</div>
+                <div class="isr-half-stn">${esc(asalData.stn)}</div>
+                <div class="isr-half-simf">${esc(asalData.simf)}</div>
+                <div class="isr-half-freq"><span class="pill-tx">TX</span> ${asalData.freqTx}</div>
+                <div class="isr-half-freq"><span class="pill-rx">RX</span> ${asalData.freqRx}</div>
+              </div>
+              <div class="isr-half">
+                <div class="isr-half-label">Stasiun lawan</div>
+                <div class="isr-half-stn">${esc(lawanData.stn)}</div>
+                <div class="isr-half-simf">${esc(lawanData.simf)}</div>
+                <div class="isr-half-freq"><span class="pill-tx">TX</span> ${lawanData.freqTx}</div>
+                <div class="isr-half-freq"><span class="pill-rx">RX</span> ${lawanData.freqRx}</div>
+              </div>
+            </div>
+            ${infoBar}${antSpecs}
+            ${extraGrid?`<div class="mw-extra-grid">${extraGrid}</div>`:''}
+            <div class="mwlink-detail" id="mwd-${mid}">
+              ${!e.ghost?`<button class="goto-btn" onclick="gotoSite('${partner.id}')">
+                \u2192 Lihat site lawan: ${esc(partner.label)}
+              </button>`:''}
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="lawan-group" id="${gid}">
+          <div class="lawan-header" onclick="toggleLawanGroup('${gid}')">
+            <div class="lawan-dot ${e.ghost?'ghost':''}" style="background:${partnerColor}"></div>
+            <div class="lawan-name">${esc(partner.label)}</div>
+            <span class="lawan-count">${e.mwlinks.length} link</span>
+            <i class="ti ti-chevron-down lawan-chevron" aria-hidden="true"></i>
+          </div>
+          <div class="lawan-links" id="${gid}-links" style="display:none">${linksHtml}</div>
+        </div>`;
+    }).join('');
+
+    return `<div class="panel-tab-pane${ti===0?' active':''}" id="ppane-${cid}" data-clnt="${cid}">
+      ${groupsHtml||`<p style="color:var(--muted);font-size:12px;padding:8px 0">Tidak ada MW link.</p>`}
+    </div>`;
+  }).join('');
+
+  requestAnimationFrame(()=>{ updatePanelHeight(); setTimeout(updatePanelHeight,300); });
+}
+
+function switchPanelTab(cid){
+  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel-tab-pane').forEach(p=>p.classList.remove('active'));
+  const tab=document.getElementById('ptab-'+cid);
+  const pane=document.getElementById('ppane-'+cid);
+  if(tab) tab.classList.add('active');
+  if(pane) pane.classList.add('active');
+  document.getElementById('panelBody').scrollTop=0;
+}
+
+function toggleLawanGroup(gid){
+  const links=document.getElementById(gid+'-links');
+  const chv=document.querySelector(`#${gid} .lawan-chevron`);
+  if(!links) return;
+  const open=links.style.display!=='none'&&links.style.display!=='';
+  links.style.display=open?'none':'flex';
+  if(chv) chv.classList.toggle('open',!open);
+}
+
+function toggleMWLink(mid,safeEid,partnerId){
+  const realEid=safeEid.replace(/__/g,'|');
+  const det=document.getElementById('mwd-'+mid);
+  const chv=document.getElementById('mwc-'+mid);
+  if(!det) return;
+  const wasOpen=det.classList.contains('open');
+  document.querySelectorAll('.mwlink-detail.open').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.mw-chevron.open').forEach(c=>c.classList.remove('open'));
+  currentEdges.forEach(e=>{
+    if(e.line){
+      const clntId=findClientOfSite(e.siteA.id)||findClientOfSite(e.siteB.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      e.line.setStyle({
+        color:e.id===realEid?(e.ghost?color+'ee':color):(e.ghost?color+'44':color+'44'),
+        weight:e.id===realEid?5:e.ghost?2:3,
+        dashArray:e.ghost?'8 5':'8 4 2 4'
+      });
+    }
+  });
+  if(!wasOpen){
+    det.classList.add('open'); if(chv) chv.classList.add('open');
+    openLinkId=mid;
+    currentSites.forEach(s=>{
+      if(s.marker){
+        const clntId=findClientOfSite(s.id);
+        const color=clientColorMap[clntId]||'#00e5ff';
+        s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,s.id===activeSiteId||s.id===partnerId,color));
+      }
+    });
+  } else {
+    openLinkId=null;
+    currentSites.forEach(s=>{
+      if(s.marker){
+        const clntId=findClientOfSite(s.id);
+        const color=clientColorMap[clntId]||'#00e5ff';
+        s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,s.id===activeSiteId,color));
+      }
+    });
+  }
+}
+
+function gotoSite(siteId){
+  const from=sitesIndex[activeSiteId];
+  const to=sitesIndex[siteId];
+  const bc=document.getElementById('panelBreadcrumb');
+  bc.style.display='flex';
+  bc.innerHTML=`
+    <span style="cursor:pointer;color:var(--accent)" onclick="selectSite('${from?.id}',true)">\u2190 ${esc(from?.label)||'Site Asal'}</span>
+    <span style="color:var(--muted)">\u203A</span>
+    <span class="active">${esc(to?.label)||esc(siteId)}</span>`;
+  selectSite(siteId,true);
+}
+
+function repositionZoom(){
+  const topBar=document.querySelector('.top-bar');
+  if(!topBar) return;
+  const h=topBar.getBoundingClientRect().height;
+  // Satu CSS var mengontrol semua: .map-controls top + leaflet zoom margin-top
+  document.documentElement.style.setProperty('--topbar-h', h+'px');
+}
+function updatePanelHeight(){
+  const p=document.getElementById('detailPanel');
+  if(!p) return;
+  const h=p.getBoundingClientRect().height;
+  document.querySelector('.app').style.setProperty('--panel-h', h+'px');
+  repositionZoom();
+}
+
+function closePanel(){
+  document.getElementById('detailPanel').classList.remove('open');
+  document.querySelector('.app').classList.remove('panel-open');
+  document.getElementById('panelTabs').style.display='none';
+  document.getElementById('panelBreadcrumb').style.display='none';
+  activeSiteId=null; openLinkId=null;
+  currentSites.forEach(s=>{
+    if(s.marker){
+      const clntId=findClientOfSite(s.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,false,color));
+    }
+  });
+  currentEdges.forEach(e=>{
+    if(e.line){
+      const clntId=findClientOfSite(e.siteA.id)||findClientOfSite(e.siteB.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      e.line.setStyle({color:e.ghost?color+'88':color+'cc',weight:e.ghost?2:3,dashArray:e.ghost?'8 5':'8 4 2 4',opacity:1});
+    }
+  });
+  // kalau toggle off, sembunyikan lagi layer garis & label setelah panel tutup
+  _activeDrawSiteIds = null;
+  if(!showLinks){
+    if(map.hasLayer(edgeLayer)) map.removeLayer(edgeLayer);
+    if(map.hasLayer(linkLabelsLayer)) map.removeLayer(linkLabelsLayer);
+    edgeCanvasVisible=false; scheduleEdgeDraw();
+  } else {
+    scheduleEdgeDraw(); // redraw semua garis karena filter sudah di-null
+  }
+  updateLinkLabels(null);
+  requestAnimationFrame(repositionZoom);
+}
+
+/* =======================================================
+   DROPDOWN MULTI-SELECT
+/* ======================================================= */
+function toggleDropdown(){
+  const dd=document.getElementById('msDropdown');
+  const caret=document.getElementById('chipCaret');
+  const trigger=document.getElementById('msTrigger');
+  const isOpen=dd.classList.contains('open');
+  dd.classList.toggle('open');
+  caret.classList.toggle('open',!isOpen);
+  trigger.classList.toggle('open',!isOpen);
+}
+
+function closeDropdownAll(){
+  document.getElementById('msDropdown').classList.remove('open');
+  document.getElementById('chipCaret').classList.remove('open');
+  document.getElementById('msTrigger').classList.remove('open');
+  // tutup legend
+  document.getElementById('legendPanel').classList.remove('open');
+  document.getElementById('legendBtn').classList.remove('active');
+  // tutup loc popup
+  document.getElementById('locPopup').classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#msTrigger')&&!e.target.closest('#msDropdown')
+    &&!e.target.closest('#legendBtn')&&!e.target.closest('#legendPanel')
+    &&!e.target.closest('#locBtn')&&!e.target.closest('#locPopup')){
+    closeDropdownAll();
+  }
+});
+
+function buildDropdown(){
+  const dd=document.getElementById('msDropdown');
+  const wasOpen=dd.classList.contains('open');
+  const isAllSelected=selectedIds.size===allClients.length;
+  const allItem=`<div class="ms-item${isAllSelected?' selected':''}" onclick="toggleClient('__all__')">
+    <div class="ms-check"><span class="ms-check-mark">\u2713</span></div>
+    <div class="ms-name" style="color:var(--accent);font-weight:500">Semua klien</div>
+    <span class="ms-count">${allClients.reduce((s,c)=>s+(+c.total_isr),0)} ISR</span>
+  </div>`;
+  const items=allClients.map((c,i)=>{
+    const color=clientColorMap[c.clnt_id]||'#00e5ff';
+    const sel=selectedIds.has(+c.clnt_id);
+    return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.clnt_id})">
+      <div class="ms-check"><span class="ms-check-mark">\u2713</span></div>
+      <div class="ms-dot" style="background:${color}"></div>
+      <div class="ms-name">${esc(c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '))}</div>
+      <span class="ms-count">${c.total_isr} ISR</span>
+    </div>`;
+  }).join('');
+  dd.innerHTML=allItem+items;
+  if(wasOpen) dd.classList.add('open');
+}
+
+function updateChips(){
+  const area=document.getElementById('chipsArea');
+  if(selectedIds.size===0){
+    area.innerHTML=`<span style="font-size:12px;color:var(--muted)">Pilih klien\u2026</span>`;
+    return;
+  }
+  const isMobile=window.innerWidth<=480;
+  if(isMobile){
+    if(selectedIds.size===allClients.length){
+      area.innerHTML=`<span class="chip" style="border-color:var(--accent);color:var(--accent)">Semua klien (${allClients.length})</span>`;
+    } else if(selectedIds.size===1){
+      const id=[...selectedIds][0];
+      const c=allClients.find(x=>x.clnt_id==id);
+      const col=clientColorMap[id]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,3).join(' '):id;
+      area.innerHTML=`<span class="chip" style="border-color:${col};color:${col}">${esc(name)}</span>`;
+    } else {
+      area.innerHTML=`<span class="chip" style="border-color:var(--accent);color:var(--accent)">${selectedIds.size} klien aktif</span>`;
+    }
+    return;
+  }
+  area.innerHTML=[...selectedIds].map(id=>{
+    const c=allClients.find(x=>x.clnt_id==id);
+    const col=clientColorMap[id]||'#00e5ff';
+    const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+    return `<span class="chip" style="border-color:${col};color:${col}">${esc(name)}</span>`;
+  }).join('');
+}
+
+async function toggleClient(clntId){
+  if(clntId==='__all__'){
+    const isAllSelected=selectedIds.size===allClients.length;
+    if(isAllSelected){
+      selectedIds.clear();
+    } else {
+      await ensureAllLoaded();
+      allClients.forEach(c=>selectedIds.add(+c.clnt_id));
+      // Zoom dulu, render setelah animasi selesai
+      // Zoom ke lokasi user, fallback ke Jogja
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+          pos=>{
+            setUserLocation(pos.coords.latitude,pos.coords.longitude);
+            map.setView([pos.coords.latitude,pos.coords.longitude],15,{animate:true});
+          },
+          ()=>{ map.setView([-7.80,110.37],15,{animate:true}); }
+        );
+      } else {
+        map.setView([-7.80,110.37],15,{animate:true});
+      }
+      if(showLinks){
+        showLinks=false;
+        document.getElementById('linkToggle').checked=false;
+        if(map.hasLayer(edgeLayer)) map.removeLayer(edgeLayer);
+        if(map.hasLayer(linkLabelsLayer)) map.removeLayer(linkLabelsLayer);
+      }
+    }
+  } else {
+    const id=+clntId;
+    if(selectedIds.has(id)){
+      selectedIds.delete(id);
+    } else {
+      selectedIds.add(id);
+      showSkeletonForClient(id);
+      await ensureLoaded(id);
+      clearSkeleton();
+    }
+  }
+
+  const skipFitNow=(clntId==='__all__'&&selectedIds.size===allClients.length);
+  if(skipFitNow){
+    buildDropdown();
+    updateChips();
+    closePanel();
+    map.once('moveend',()=>{ renderAllVisible(true); });
+  } else {
+    renderAllVisible(false);
+    buildDropdown();
+    updateChips();
+    closePanel();
+  }
+}
+
+async function ensureLoaded(clntId){
+  clntId=+clntId;
+  if(allLayersData[clntId]) return;
+  let j;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const r=await fetch(`${API.isr}?clnt_id=${clntId}`,{signal:AbortSignal.timeout(20000)});
+      j=await r.json();
+      break;
+    }catch(e){
+      if(attempt===0){ await new Promise(res=>setTimeout(res,1500)); continue; }
+      const overlay=document.getElementById('stateOverlay');
+      overlay.style.display='flex';
+      overlay.innerHTML='<span>&#9888; Gagal memuat data. Coba lagi atau refresh halaman.</span>';
+      console.error('fetch isr error',e);
+      return;
+    }
+  }
+  if(!j||!j.success){
+    const overlay=document.getElementById('stateOverlay');
+    overlay.style.display='flex';
+    overlay.innerHTML=`<span>&#9888; ${j?.error||'Gagal memuat data ISR'}</span>`;
+    console.error('isr error',j?.error);
+    return;
+  }
+  const rows=j.raw||[];
+  let sites=clusterISRtoSites(rows);
+  // ID site dari clusterISRtoSites (S0, S1, G0, ...) hanya unik per-klien.
+  // Saat banyak klien aktif sekaligus, ID yang sama bisa kolisi antar klien
+  // dan menimpa entri di sitesIndex/edgesIndex -> data panel jadi salah.
+  // Prefix dengan clnt_id SEBELUM buildMWLinks agar edgeKey & _src_site_id konsisten.
+  sites.forEach(s=>{ s.id=`c${clntId}_${s.id}`; });
+  const edges=buildMWLinks(sites,rows);
+  const connectedIds=new Set();
+  edges.forEach(e=>{ connectedIds.add(e.siteA.id); connectedIds.add(e.siteB.id); });
+  sites=sites.filter(s=>!s.ghost||connectedIds.has(s.id));
+  allLayersData[clntId]={sites,edges,rows};
+}
+
+async function ensureAllLoaded(){
+  const overlay=document.getElementById('stateOverlay');
+  overlay.style.display='flex';
+  overlay.innerHTML='<div class="spinner"></div><span>Memuat semua klien\u2026</span>';
+  await Promise.all(allClients.map(c=>ensureLoaded(c.clnt_id)));
+  overlay.style.display='none';
+}
+
+/* =======================================================
+   FOOTER STATS
+/* ======================================================= */
+function updateFooter(){
+  const ids=[...selectedIds];
+  const isAll=ids.length===allClients.length;
+  let totalIsr=0,totalLink=0;
+  ids.forEach(id=>{
+    const c=allClients.find(x=>x.clnt_id==id);
+    if(c){ totalIsr+=(+c.total_isr); totalLink+=(+c.total_link); }
+  });
+  document.getElementById('footIsr').textContent=totalIsr.toLocaleString('id');
+  document.getElementById('footLink').textContent=totalLink.toLocaleString('id');
+  document.getElementById('footKlien').textContent=ids.length;
+  updateLegend();
+}
+
+/* \u2500\u2500 TOGGLE LEGEND \u2500\u2500 */
+function toggleLegend(){
+  const panel=document.getElementById('legendPanel');
+  const btn=document.getElementById('legendBtn');
+  const isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open',!isOpen);
+  btn.classList.toggle('active',!isOpen);
+  requestAnimationFrame(repositionZoom);
+}
+
+/* =======================================================
+   LOAD CLIENTS
+/* ======================================================= */
+async function loadClients(){
+  let j;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const r=await fetch(API.clients,{signal:AbortSignal.timeout(10000)});
+      j=await r.json();
+      break;
+    }catch(e){
+      if(attempt===0){ await new Promise(res=>setTimeout(res,1500)); continue; }
+      document.getElementById('stateOverlay').innerHTML='<span>&#9888; Koneksi ke server gagal. Refresh untuk coba lagi.</span>';
+      return;
+    }
+  }
+  if(!j.success){
+    document.getElementById('stateOverlay').innerHTML=`<span>\u26A0 ${j.error||'Gagal memuat klien'}</span>`;
+    return;
+  }
+  allClients=j.data;
+
+  // Assign warna per klien
+  let paletteIdx=0;
+  allClients.forEach((c)=>{
+    const named=assignClientColor(c.clnt_name);
+    if(named){ clientColorMap[+c.clnt_id]=named; }
+    else { clientColorMap[+c.clnt_id]=CLIENT_COLORS[paletteIdx%CLIENT_COLORS.length]; paletteIdx++; }
+  });
+
+  // Default: tidak ada yang dipilih, user pilih sendiri
+  buildDropdown();
+  updateChips();
+
+  // Sembunyikan overlay, tampilkan pesan pilih klien
+  const overlay=document.getElementById('stateOverlay');
+  overlay.style.display='flex';
+  overlay.innerHTML='<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Pilih klien untuk melihat peta</span>';
+}
+
+/* \u2500\u2500 TOGGLE LINK \u2500\u2500 */
+document.getElementById('linkToggle').addEventListener('change',function(){
+  showLinks=this.checked;
+  if(showLinks){
+    _activeDrawSiteIds=null; // toggle on = gambar semua garis
+    if(!map.hasLayer(edgeLayer)) edgeLayer.addTo(map);
+    if(!map.hasLayer(linkLabelsLayer)) linkLabelsLayer.addTo(map);
+    edgeCanvasVisible=true; scheduleEdgeDraw();
+  } else {
+    if(map.hasLayer(edgeLayer)) map.removeLayer(edgeLayer);
+    if(map.hasLayer(linkLabelsLayer)) map.removeLayer(linkLabelsLayer);
+    edgeCanvasVisible=false; scheduleEdgeDraw();
+  }
+});
+
+document.getElementById('basemapSel').addEventListener('change',function(){
+  setBasemap(this.value);
+});
+
+document.getElementById('panelClose').addEventListener('click',closePanel);
+
+// Scroll di dalam panel jangan bocor ke map
+document.getElementById('detailPanel').addEventListener('wheel',(ev)=>{
+  ev.stopPropagation();
+},{passive:true});
+// mobile: cegah swipe di panel bocor ke map (pan map)
+const _panel=document.getElementById('detailPanel');
+_panel.addEventListener('touchstart',(ev)=>{ ev.stopPropagation(); },{passive:true});
+_panel.addEventListener('touchmove',(ev)=>{ ev.stopPropagation(); },{passive:true});
+
+// swipe-down-to-close dinonaktifkan; tutup via silang atau tap luar
+
+/* ── LOCATION MARKER ── */
+let userLocMarker=null;
+
+function setUserLocation(lat,lng){
+  if(userLocMarker) map.removeLayer(userLocMarker);
+  const icon=L.divIcon({
+    html:`<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+      <circle cx="11" cy="11" r="10" fill="#00e5ff" fill-opacity=".2" stroke="#00e5ff" stroke-width="2"/>
+      <circle cx="11" cy="11" r="4" fill="#00e5ff"/>
+      <circle cx="11" cy="11" r="4" fill="#00e5ff" opacity=".4">
+        <animate attributeName="r" from="4" to="10" dur="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" from=".4" to="0" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+    </svg>`,
+    className:'',iconSize:[22,22],iconAnchor:[11,11]
+  });
+  userLocMarker=L.marker([lat,lng],{icon,zIndexOffset:2000,interactive:false}).addTo(map);
+  userLocMarker.bindTooltip('Lokasi Anda',{className:'lf-tooltip',direction:'right',offset:[12,0]});
+}
+
+function useGPSLoc(){
+  if(!navigator.geolocation){ alert('Geolocation tidak didukung browser ini.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('manualLat').value=pos.coords.latitude.toFixed(6);
+    document.getElementById('manualLng').value=pos.coords.longitude.toFixed(6);
+  },()=>alert('Gagal mendapatkan lokasi GPS.'));
+}
+
+function useManualLoc(){
+  const lat=parseFloat(document.getElementById('manualLat').value);
+  const lng=parseFloat(document.getElementById('manualLng').value);
+  if(isNaN(lat)||isNaN(lng)){ alert('Masukkan koordinat yang valid.'); return; }
+  document.getElementById('locPopup').classList.remove('open');
+  setUserLocation(lat,lng);
+  map.setView([lat,lng],15,{animate:true});
+}
+
+function goToLoc(){
+  const lat=parseFloat(document.getElementById('manualLat').value);
+  const lng=parseFloat(document.getElementById('manualLng').value);
+  if(!isNaN(lat)&&!isNaN(lng)){
+    useManualLoc();
+  } else {
+    useGPSLoc();
+    setTimeout(()=>{
+      const la=parseFloat(document.getElementById('manualLat').value);
+      const lo=parseFloat(document.getElementById('manualLng').value);
+      if(!isNaN(la)&&!isNaN(lo)){ useManualLoc(); }
+    },1500);
+  }
+}
+
+document.getElementById('locBtn').addEventListener('click',(e)=>{
+  e.stopPropagation();
+  document.getElementById('locPopup').classList.toggle('open');
+});
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('#locBtn')&&!e.target.closest('#locPopup'))
+    document.getElementById('locPopup').classList.remove('open');
+});
+
+window.addEventListener("resize", ()=>{ repositionZoom(); updateChips(); });
+window.addEventListener("orientationchange", ()=>{ setTimeout(()=>{ repositionZoom(); updateChips(); }, 150); });
+// Posisi awal zoom control setelah DOM siap
+// Panggil repositionZoom setelah render selesai — pakai setTimeout sebagai fallback
+requestAnimationFrame(()=>{ repositionZoom(); setTimeout(repositionZoom, 300); });
+loadClients();
+
+</script>
+</body>
+</html>
