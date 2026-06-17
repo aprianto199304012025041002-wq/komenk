@@ -107,20 +107,17 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 [data-theme="bright"] input:checked+.tog-s:before{background:var(--accent)}
 
 /* ══════════════════════════════════════════════
-   FLOATING CLIENT SELECTOR — di bawah top bar
+   FLOATING CLIENT SELECTOR — inline di top bar (desktop)
    ══════════════════════════════════════════════ */
-.float-selector{
-  position:absolute;z-index:600;
-  top:52px;left:12px;
-  width:280px;
-}
+/* Desktop: selector sudah di dalam .float-controls, elemen ini tidak dipakai */
+.float-selector{ display:none }
 
 .ms-trigger{
-  width:100%;background:var(--glass);backdrop-filter:blur(10px);
+  background:var(--glass);backdrop-filter:blur(10px);
   border:1px solid var(--border);border-radius:var(--radius);
-  padding:8px 10px;display:flex;align-items:center;gap:6px;
+  padding:5px 10px;display:flex;align-items:center;gap:6px;
   cursor:pointer;font-size:12px;color:var(--text);transition:border .15s;
-  box-shadow:var(--shadow-float);
+  box-shadow:var(--shadow-float);min-width:140px;max-width:260px;
 }
 .ms-trigger:hover,.ms-trigger.open{border-color:var(--accent)}
 .chips-area{flex:1;display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;min-width:0}
@@ -753,17 +750,17 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
         <span class="tog-s"></span>
       </label>
     </div>
-  </div>
 
-  <!-- FLOATING: Client selector -->
-  <div class="float-selector" id="floatSelector">
-    <div class="ms-trigger" id="msTrigger" onclick="toggleDropdown()">
-      <div class="chips-area" id="chipsArea">
-        <span class="chip" style="border-color:var(--accent);color:var(--accent)">Memuat…</span>
+    <!-- Selector klien — inline di top bar, kanan pill garis link -->
+    <div class="ctrl-pill ctrl-pill-sel" style="padding:0;overflow:visible;position:relative;background:none;border:none;box-shadow:none">
+      <div class="ms-trigger" id="msTrigger" onclick="toggleDropdown()" style="height:32px;padding:4px 10px">
+        <div class="chips-area" id="chipsArea">
+          <span class="chip" style="border-color:var(--accent);color:var(--accent)">Memuat…</span>
+        </div>
+        <span class="chip-caret" id="chipCaret">▾</span>
       </div>
-      <span class="chip-caret" id="chipCaret">▾</span>
+      <div class="ms-dropdown" id="msDropdown" style="position:absolute;top:calc(100% + 4px);left:0;min-width:260px"></div>
     </div>
-    <div class="ms-dropdown" id="msDropdown"></div>
   </div>
 
   <!-- MAP CONTROLS: GPS + Compass -->
@@ -1023,21 +1020,13 @@ document.getElementById('basemapSel').addEventListener('change', e => {
 function recalcLayout(){
   const logo = document.getElementById('floatLogo');
   const ctrl = document.getElementById('floatControls');
-  const sel  = document.getElementById('floatSelector');
   const isDesktop = window.innerWidth >= 769;
-
   if(isDesktop){
     const logoRect = logo.getBoundingClientRect();
-    // Controls: sejajar dengan logo, di sebelah kanan
     ctrl.style.top  = '12px';
     ctrl.style.left = (logoRect.right + 8) + 'px';
-    ctrl.style.flexDirection = 'row';
-    // Selector: di bawah logo, kiri
-    sel.style.top  = (logoRect.bottom + 8) + 'px';
-    sel.style.left = '12px';
-    sel.style.width = '280px';
   }
-  // Mobile: CSS menangani semuanya, JS tidak perlu set
+  // Mobile: semua dikontrol CSS
 }
 window.addEventListener('resize', recalcLayout);
 
@@ -1118,6 +1107,7 @@ async function fetchLinkDetail(isrId){
    DROPDOWN
    ══════════════════════════════════════════════ */
 function toggleDropdown(){
+  if(isMobile()) return;
   S.dropdownOpen = !S.dropdownOpen;
   document.getElementById('msDropdown').classList.toggle('open', S.dropdownOpen);
   document.getElementById('chipCaret').classList.toggle('open', S.dropdownOpen);
