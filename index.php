@@ -1044,56 +1044,189 @@ async function fetchSiteData(clientId){
   const r = await fetch(`api/isr.php?clnt_id=${clientId}`);
   const d = await r.json();
   if(!d.success) throw new Error(d.error||'Gagal load ISR');
+  const rows = d.raw || [];
+  let sites = clusterISRtoSites(rows);
+  // prefix ID agar tidak tabrakan antar klien
+  sites.forEach(s=>{ s.id=`c${clientId}_${s.id}`; });
+  const edges = buildMWLinks(sites, rows);
+  const connectedIds = new Set();
+  edges.forEach(e=>{ connectedIds.add(e.siteA.id); connectedIds.add(e.siteB.id); });
+  sites = sites.filter(s=>!s.ghost||connectedIds.has(s.id));
+  return { sites, edges, rows };
+}
 
-  // Parse raw rows -> sites (per site_id, ambil TX) + edges (pasangan TX-RX)
-  const raw = d.raw || [];
-  const siteMap = {};
-  const edgeList = [];
+function dmsToDecimal(deg,min,sec,dir){
+  if(deg==null||deg===''||deg===undefined) return null;
+  const d=parseFloat(deg);
+  if(isNaN(d)) return null;
+  const m=parseFloat(min)||0;
+  const s=parseFloat(sec)||0;
+  if(d===0&&m===0&&s===0) return null;
+  let dd=d+m/60+s/3600;
+  if(dir==='S'||dir==='W') dd=-dd;
+  return isNaN(dd)?null:dd;
+}
 
-  raw.forEach(row => {
-    const sid = row.site_id;
-    const lat = parseFloat(row.sid_lat), lng = parseFloat(row.sid_long);
-    if(!siteMap[sid]){
-      siteMap[sid] = {
-        isr_id: row.id,
-        site_id: sid,
-        site_name: row.stn_name,
-        lat: isNaN(lat) ? null : lat,
-        lng: isNaN(lng) ? null : lng,
-        link_count: 0,
-        links: []
-      };
+function haversineM(lat1,lon1,lat2,lon2){
+  const R=6371000,dl=(lat2-lat1)*Math.PI/180,dg=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dl/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dg/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function nameSimilarity(a,b){
+  if(!a||!b) return 0;
+  a=a.toLowerCase().replace(/[^a-z0-9]/g,'');
+  b=b.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(a===b) return 1;
+  let common=0;
+  for(let i=0;i<Math.min(a.length,b.length);i++){ if(a[i]===b[i]) common++; else break; }
+  return common/Math.max(a.length,b.length);
+}
+
+function addrNorm(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim(); }
+
+function stnNorm(s){
+  if(!s) return '';
+  const parts=s.split('_');
+  const seen=new Set();
+  const deduped=parts.filter(p=>{ const k=p.toLowerCase().replace(/\s+/g,''); if(seen.has(k)) return false; seen.add(k); return true; });
+  return addrNorm(deduped.join(' '));
+}
+
+function addrWordOverlap(a,b){
+  if(!a||!b) return 0;
+  const wa=new Set(addrNorm(a).split(' ').filter(w=>w.length>3));
+  const wb=new Set(addrNorm(b).split(' ').filter(w=>w.length>3));
+  if(!wa.size||!wb.size) return 0;
+  let overlap=0; wa.forEach(w=>{ if(wb.has(w)) overlap++; });
+  return overlap/Math.min(wa.size,wb.size);
+}
+
+function stnWordOverlap(a,b){
+  if(!a||!b) return 0;
+  const wa=new Set(stnNorm(a).split(' ').filter(w=>w.length>2));
+  const wb=new Set(stnNorm(b).split(' ').filter(w=>w.length>2));
+  if(!wa.size||!wb.size) return 0;
+  let overlap=0;
+  wa.forEach(w=>{ if(wb.has(w)){ overlap++; } else { for(const wb2 of wb){ if(wb2.startsWith(w)||w.startsWith(wb2)){ overlap+=0.7; break; } } } });
+  return overlap/Math.min(wa.size,wb.size);
+}
+
+function siteHasSimilarLawan(site,lawan){
+  if(!lawan) return false;
+  const la=stnNorm(lawan);
+  return site.isr.some(r=>{ if(!r.stasiun_lawan) return false; const lb=stnNorm(r.stasiun_lawan); if(la===lb) return true; return stnWordOverlap(lawan,r.stasiun_lawan)>=0.6; });
+}
+
+const MAX_DIST=100;
+
+function clusterISRtoSites(rows){
+  const sites=[];
+  rows.forEach(isr=>{
+    const lat=isr.sid_lat?parseFloat(isr.sid_lat):null;
+    const lng=isr.sid_long?parseFloat(isr.sid_long):null;
+    if(lat===null||lng===null||isNaN(lat)||isNaN(lng)) return;
+    let best=null,bestScore=-1;
+    for(const site of sites){
+      const dist=haversineM(lat,lng,site.lat,site.lng);
+      if(dist>MAX_DIST) continue;
+      let score=0;
+      if(dist<20){ score=100; }
+      else{
+        const nsBest=site.isr.length?Math.max(...site.isr.map(r=>nameSimilarity(isr.stn_name,r.stn_name))):0;
+        if(nsBest>=0.7) score=Math.max(score,60+Math.round(nsBest*20));
+        const addrOverlapBest=site.isr.length?Math.max(...site.isr.map(r=>addrWordOverlap(isr.stn_addr,r.stn_addr))):0;
+        if(addrOverlapBest>=0.5) score=Math.max(score,60+Math.round(addrOverlapBest*30));
+        if(siteHasSimilarLawan(site,isr.stasiun_lawan)) score=Math.max(score,75);
+        if(isr.stasiun_lawan&&site.isr.some(r=>r.stasiun_lawan===isr.stasiun_lawan)) score=Math.max(score,80);
+      }
+      if(score>bestScore){ bestScore=score; best=site; }
     }
-    siteMap[sid].link_count++;
-    siteMap[sid].links.push(row);
-
-    // Edge: hanya TX yang punya koordinat lawan
-    if(row.trans_type === 'Transmitter' && row.sid_lat && row.sid_long &&
-       row.to_lat_deg && row.to_long_deg){
-      const toLat = dmsToDecimal(row.to_lat_deg, row.to_lat_min, row.to_lat_sec, row.to_lat_dir_ind);
-      const toLng = dmsToDecimal(row.to_long_deg, row.to_long_min, row.to_long_sec, row.to_long_dir_ind);
-      edgeList.push({
-        from_isr_id: row.id,
-        from_site_id: sid,
-        from_lat: lat,
-        from_lng: lng,
-        to_site_id: row.to_site_id,
-        to_isr_id: row.to_clnt_id,
-        to_lat: toLat,
-        to_lng: toLng,
-        link_id: row.link_id
-      });
+    if(best&&bestScore>0){
+      best.isr.push(isr);
+      const n=best.isr.length;
+      best.lat=(best.lat*(n-1)+lat)/n;
+      best.lng=(best.lng*(n-1)+lng)/n;
+    } else {
+      sites.push({ id:'S'+sites.length, lat, lng,
+        label:isr.stn_addr?isr.stn_addr.replace(/,.*$/,'').trim().substring(0,30):(isr.stn_name||'Site'),
+        isr:[isr], ghost:false, marker:null, link_count:0 });
     }
   });
 
-  return { sites: Object.values(siteMap), edges: edgeList };
+  const ghostSites=[];
+  rows.forEach(isr=>{
+    const toLat=dmsToDecimal(isr.to_lat_deg,isr.to_lat_min,isr.to_lat_sec,isr.to_lat_dir_ind);
+    const toLng=dmsToDecimal(isr.to_long_deg,isr.to_long_min,isr.to_long_sec,isr.to_long_dir_ind);
+    if(toLat===null||toLng===null) return;
+    const nearSite=sites.find(t=>haversineM(toLat,toLng,t.lat,t.lng)<MAX_DIST);
+    if(nearSite) return;
+    if(isr.stasiun_lawan){
+      const lawanNorm=stnNorm(isr.stasiun_lawan);
+      const nameMatch=sites.find(t=>{ if(t.isr.some(r=>r.id===isr.id)) return false; return t.isr.some(r=>{ if(!r.stn_name) return false; if(stnNorm(r.stn_name)===lawanNorm) return true; return stnWordOverlap(r.stn_name,isr.stasiun_lawan)>=0.6; }); });
+      if(nameMatch) return;
+    }
+    const existGhost=ghostSites.find(t=>haversineM(toLat,toLng,t.lat,t.lng)<MAX_DIST);
+    if(existGhost){
+      if(!existGhost.isr.some(r=>r._ghost_ref_simf===isr.no_simf&&r._ghost_ref_lawan===isr.stasiun_lawan))
+        existGhost.isr.push({stn_name:isr.stasiun_lawan,_is_ghost:true,_ghost_ref_simf:isr.no_simf,_ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr});
+      return;
+    }
+    ghostSites.push({ id:'G'+ghostSites.length, lat:toLat, lng:toLng,
+      label:isr.stasiun_lawan||'Ghost Site',
+      isr:[{stn_name:isr.stasiun_lawan,_is_ghost:true,_ghost_ref_simf:isr.no_simf,_ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr}],
+      ghost:true, marker:null, link_count:0 });
+  });
+  return [...sites,...ghostSites];
 }
 
-function dmsToDecimal(deg, min, sec, dir){
-  const d = parseFloat(deg)||0, m = parseFloat(min)||0, s = parseFloat(sec)||0;
-  let dd = d + m/60 + s/3600;
-  if(dir && (dir==='S'||dir==='W')) dd = -dd;
-  return dd;
+function buildMWLinks(sites,rows){
+  const edges=new Map();
+  const isrToSite=new Map();
+  sites.filter(s=>!s.ghost).forEach(s=>s.isr.forEach(r=>isrToSite.set(r.id,s)));
+  rows.forEach(isr=>{
+    const sA=isrToSite.get(isr.id);
+    if(!sA) return;
+    let sB=null,method='solo';
+    if(isr.link_id!==null){
+      for(const s of sites){ if(s.id===sA.id||s.ghost) continue; if(s.isr.some(r=>r.link_id==isr.link_id)){ sB=s;method='link_id';break; } }
+      if(!sB){ for(const s of sites){ if(s.id===sA.id||!s.ghost) continue; if(s.isr.some(r=>r.parent_isr&&r.parent_isr.link_id==isr.link_id)){ sB=s;method='link_id';break; } } }
+      if(!sB){
+        const toLat=dmsToDecimal(isr.to_lat_deg,isr.to_lat_min,isr.to_lat_sec,isr.to_lat_dir_ind);
+        const toLng=dmsToDecimal(isr.to_long_deg,isr.to_long_min,isr.to_long_sec,isr.to_long_dir_ind);
+        if(toLat!==null&&toLng!==null){
+          for(const s of sites){ if(s.id===sA.id||!s.ghost) continue; if(haversineM(toLat,toLng,s.lat,s.lng)<MAX_DIST){ sB=s;method='ghost_coord';break; } }
+          if(!sB){ for(const s of sites){ if(s.id===sA.id||s.ghost) continue; if(haversineM(toLat,toLng,s.lat,s.lng)<MAX_DIST){ sB=s;method='coord_real';break; } } }
+          if(!sB&&isr.stasiun_lawan){
+            const lawanNorm=stnNorm(isr.stasiun_lawan);
+            for(const s of sites){ if(s.id===sA.id) continue; if(s.isr.some(r=>r.stn_name&&(stnNorm(r.stn_name)===lawanNorm||stnWordOverlap(r.stn_name,isr.stasiun_lawan)>=0.6))){ sB=s;method='name_fallback';break; } }
+          }
+        }
+      }
+    }
+    if(!sB) return;
+    const edgeKey=[sA.id,sB.id].sort().join('|');
+    const isInferred=method==='ghost_coord'||method==='coord_real'||method==='name_fallback';
+    if(!edges.has(edgeKey)) edges.set(edgeKey,{id:edgeKey,siteA:sA.id<sB.id?sA:sB,siteB:sA.id<sB.id?sB:sA,mwlinks:[],ghost:sB.ghost||isInferred,line:null});
+    const e=edges.get(edgeKey);
+    if(!e.mwlinks.find(m=>m.link_id==isr.link_id&&isr.link_id!==null)){
+      e.mwlinks.push({link_id:isr.link_id,freq_tx:isr.freq,freq_rx:isr.freq_pair,
+        no_simf:isr.no_simf,appl_id:isr.appl_id,validity:isr.validity_date,
+        circuit_len:isr.circuit_len,azim:isr.azim,eq_mfr:isr.eq_mfr,eq_mdl:isr.eq_mdl,
+        stn_name:isr.stn_name,stasiun_lawan:isr.stasiun_lawan,trans_type:isr.trans_type,
+        h_asl:isr.h_asl,hgt_ant:isr.hgt_ant,erp:isr.erp_pwr_dbm,
+        status_simf:isr.status_simf,licence_date:isr.licence_date,appl_date:isr.appl_date,
+        umur_isr:isr.umur_isr,city:isr.city,province:isr.province,
+        method,_isr_id:isr.id,_src_site_id:sA.id});
+    }
+  });
+  const edgeArr=[...edges.values()];
+  edgeArr.forEach(e=>{
+    const cnt=e.mwlinks.length;
+    e.siteA.link_count=(e.siteA.link_count||0)+cnt;
+    e.siteB.link_count=(e.siteB.link_count||0)+cnt;
+  });
+  return edgeArr;
 }
 
 async function fetchLinkDetail(isrId){
