@@ -59,30 +59,29 @@ html,body{
 #map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 
 /* ══════════════════════════════════════════════
-   FLOATING TOP-LEFT — Logo + Theme toggle
+   FLOATING TOP BAR — Logo + semua kontrol sejajar
    ══════════════════════════════════════════════ */
+/* Wrapper satu baris: logo | peta | tema | link */
 .float-logo{
   position:absolute;top:12px;left:12px;z-index:600;
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:6px;
   background:var(--glass);backdrop-filter:blur(10px);
   border:1px solid var(--border);border-radius:var(--radius);
-  padding:7px 12px;box-shadow:var(--shadow-float);
+  padding:6px 10px;box-shadow:var(--shadow-float);
 }
 .logo-mark{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:3px;white-space:nowrap}
 .logo-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
 .logo-sub{font-size:9px;color:var(--muted);letter-spacing:1px;white-space:nowrap}
 
-/* ══════════════════════════════════════════════
-   FLOATING TOP-RIGHT (mobile) / kiri di bawah logo (desktop):
-   Theme toggle + basemap + link toggle
-   ══════════════════════════════════════════════ */
+/* Controls: di kanan logo, satu baris */
 .float-controls{
-  position:absolute;top:12px;left:12px;margin-top:50px;
-  z-index:600;display:flex;flex-direction:column;gap:6px;
-  /* akan di-override di desktop */
+  position:absolute;top:12px;z-index:600;
+  display:flex;flex-direction:row;align-items:center;gap:6px;
+  /* left diset via JS setelah logo diukur */
+  left:12px;
 }
 
-/* Control pill — container per baris */
+/* Control pill */
 .ctrl-pill{
   display:flex;align-items:center;gap:6px;
   background:var(--glass);backdrop-filter:blur(10px);
@@ -108,16 +107,12 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 [data-theme="bright"] input:checked+.tog-s:before{background:var(--accent)}
 
 /* ══════════════════════════════════════════════
-   FLOATING CLIENT SELECTOR — bawah logo (mobile), atau panel kiri (desktop)
+   FLOATING CLIENT SELECTOR — di bawah top bar
    ══════════════════════════════════════════════ */
-
-/* mobile: dropdown di bawah logo group */
 .float-selector{
   position:absolute;z-index:600;
-  top:12px;left:12px;
-  /* stack ke bawah dengan margin-top dinamis via JS --sel-top */
-  margin-top:var(--sel-top, 110px);
-  width:calc(100vw - 24px);max-width:320px;
+  top:52px;left:12px;
+  width:280px;
 }
 
 .ms-trigger{
@@ -444,23 +439,15 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
    DESKTOP — sidebar kanan
    ══════════════════════════════════════════════ */
 @media(min-width:769px){
-  /* Logo tetap di kiri atas */
+  /* Logo dan controls sudah di-handle via recalcLayout JS */
   .float-logo{top:12px;left:12px}
 
-  /* Controls di kiri bawah logo */
-  .float-controls{
-    top:60px;left:12px;margin-top:0;
-  }
+  /* Sembunyikan stats dan legend di desktop */
+  .float-stats{display:none!important}
+  .float-legend-btn{display:none!important}
+  .legend-panel{display:none!important}
 
-  /* Selector — floating di kiri, di bawah controls */
-  .float-selector{
-    top:auto;left:12px;margin-top:0;
-    width:260px;max-width:260px;
-    /* posisi otomatis di bawah float-controls via JS */
-    position:absolute;
-  }
-
-  /* Detail panel — SIDEBAR kanan, bukan bottom sheet */
+  /* Detail panel — SIDEBAR kanan */
   .detail-panel{
     position:absolute;
     top:0;right:0;bottom:0;left:auto;
@@ -475,30 +462,13 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .detail-panel.open{transform:translateX(0)}
   .panel-body{max-height:calc(100dvh - 120px)}
 
-  /* Stats — bottom left, di bawah selector */
-  .float-stats{
-    left:12px;transform:none;
-    bottom:calc(12px + env(safe-area-inset-bottom,0));
-    min-width:200px;
-  }
-
-  /* Legend — di atas stats, kiri */
-  .float-legend-btn{
-    left:12px;transform:none;
-    bottom:calc(60px + env(safe-area-inset-bottom,0));
-  }
-  .legend-panel{
-    left:12px;transform:none;
-    bottom:calc(90px + env(safe-area-inset-bottom,0));
-  }
-
-  /* Zoom kanan atas — tetap */
+  /* Zoom kanan atas */
   .leaflet-top.leaflet-right .leaflet-control-zoom{
     margin-top:12px!important;
     margin-right:10px!important;
   }
   .map-controls{
-    top:calc(12px + 74px + 12px); /* 12px top + 74px zoom + 12px gap */
+    top:calc(12px + 74px + 12px);
     right:10px;
   }
   .loc-popup{
@@ -1057,32 +1027,17 @@ function recalcLayout(){
   const isDesktop = window.innerWidth >= 769;
 
   if(isDesktop){
-    const logoH = logo.getBoundingClientRect().height;
-    ctrl.style.top = (12 + logoH + 8) + 'px';
-    ctrl.style.left = '12px';
-    ctrl.style.marginTop = '0';
-    const ctrlH = ctrl.getBoundingClientRect().height;
-    const ctrlTop = parseFloat(ctrl.style.top)||60;
-    sel.style.top = (ctrlTop + ctrlH + 8) + 'px';
+    const logoRect = logo.getBoundingClientRect();
+    // Controls: sejajar dengan logo, di sebelah kanan
+    ctrl.style.top  = '12px';
+    ctrl.style.left = (logoRect.right + 8) + 'px';
+    ctrl.style.flexDirection = 'row';
+    // Selector: di bawah logo, kiri
+    sel.style.top  = (logoRect.bottom + 8) + 'px';
     sel.style.left = '12px';
-    sel.style.marginTop = '0';
-  } else {
-    ctrl.style.top = '';
-    ctrl.style.left = '';
-    ctrl.style.marginTop = '';
-    sel.style.top = '';
-    sel.style.left = '';
-    sel.style.marginTop = '';
-    const logoH = logo.getBoundingClientRect().height;
-    const ctrlH = ctrl.getBoundingClientRect().height;
-    ctrl.style.position = 'absolute';
-    ctrl.style.top = (12 + logoH + 8) + 'px';
-    const ctrlTop2 = 12 + logoH + 8 + ctrlH + 8;
-    sel.style.position = 'absolute';
-    sel.style.top = ctrlTop2 + 'px';
-    sel.style.width = 'calc(100vw - 24px)';
-    sel.style.maxWidth = '320px';
+    sel.style.width = '280px';
   }
+  // Mobile: CSS menangani semuanya, JS tidak perlu set
 }
 window.addEventListener('resize', recalcLayout);
 
@@ -1097,10 +1052,59 @@ async function fetchClients(){
 }
 
 async function fetchSiteData(clientId){
-  const r = await fetch(`api/isr.php?client_id=${clientId}`);
+  const r = await fetch(`api/isr.php?clnt_id=${clientId}`);
   const d = await r.json();
   if(!d.success) throw new Error(d.error||'Gagal load ISR');
-  return d;
+
+  // Parse raw rows -> sites (per site_id, ambil TX) + edges (pasangan TX-RX)
+  const raw = d.raw || [];
+  const siteMap = {};
+  const edgeList = [];
+
+  raw.forEach(row => {
+    const sid = row.site_id;
+    const lat = parseFloat(row.sid_lat), lng = parseFloat(row.sid_long);
+    if(!siteMap[sid]){
+      siteMap[sid] = {
+        isr_id: row.id,
+        site_id: sid,
+        site_name: row.stn_name,
+        lat: isNaN(lat) ? null : lat,
+        lng: isNaN(lng) ? null : lng,
+        link_count: 0,
+        links: []
+      };
+    }
+    siteMap[sid].link_count++;
+    siteMap[sid].links.push(row);
+
+    // Edge: hanya TX yang punya koordinat lawan
+    if(row.trans_type === 'Transmitter' && row.sid_lat && row.sid_long &&
+       row.to_lat_deg && row.to_long_deg){
+      const toLat = dmsToDecimal(row.to_lat_deg, row.to_lat_min, row.to_lat_sec, row.to_lat_dir_ind);
+      const toLng = dmsToDecimal(row.to_long_deg, row.to_long_min, row.to_long_sec, row.to_long_dir_ind);
+      edgeList.push({
+        from_isr_id: row.id,
+        from_site_id: sid,
+        from_lat: lat,
+        from_lng: lng,
+        to_site_id: row.to_site_id,
+        to_isr_id: row.to_clnt_id,
+        to_lat: toLat,
+        to_lng: toLng,
+        link_id: row.link_id
+      });
+    }
+  });
+
+  return { sites: Object.values(siteMap), edges: edgeList };
+}
+
+function dmsToDecimal(deg, min, sec, dir){
+  const d = parseFloat(deg)||0, m = parseFloat(min)||0, s = parseFloat(sec)||0;
+  let dd = d + m/60 + s/3600;
+  if(dir && (dir==='S'||dir==='W')) dd = -dd;
+  return dd;
 }
 
 async function fetchLinkDetail(isrId){
@@ -1133,14 +1137,14 @@ function renderDropdown(){
   const dd = document.getElementById('msDropdown');
   dd.innerHTML = S.clients.map((c,i) => {
     const col = clientColor(i);
-    const sel = S.selectedIds.has(c.id);
-    const ld = S.allLayersData[c.id];
-    const isrN = ld ? (ld.sites||[]).length : (c.isr_count||'—');
-    const mwN  = ld ? (ld.edges||[]).length : (c.mw_count||'—');
-    return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.id})" style="--c:${col}">
+    const sel = S.selectedIds.has(c.clnt_id);
+    const ld = S.allLayersData[c.clnt_id];
+    const isrN = ld ? (ld.sites||[]).length : (c.total_isr||'—');
+    const mwN  = ld ? (ld.edges||[]).length : (c.total_link||'—');
+    return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.clnt_id})" style="--c:${col}">
       <div class="ms-check"><span class="ms-check-mark">✓</span></div>
       <div class="ms-dot" style="background:${col}"></div>
-      <span class="ms-name">${c.name}</span>
+      <span class="ms-name">${c.clnt_name}</span>
       <div class="ms-stats">
         <span class="ms-stat-chip">${isrN}ISR</span>
         <span class="ms-stat-chip">${mwN}MW</span>
@@ -1151,32 +1155,35 @@ function renderDropdown(){
 
 function renderChips(){
   const area = document.getElementById('chipsArea');
-  const sel = S.clients.filter(c => S.selectedIds.has(c.id));
+  const sel = S.clients.filter(c => S.selectedIds.has(c.clnt_id));
   if(sel.length === 0){
     area.innerHTML = `<span style="color:var(--muted);font-size:11px">Pilih klien untuk melihat…</span>`;
     return;
   }
-  area.innerHTML = sel.map((c,i) => {
+  area.innerHTML = sel.map(c => {
     const col = clientColor(S.clients.indexOf(c));
-    return `<span class="chip" style="color:${col};border-color:${col}">${c.name}</span>`;
+    return `<span class="chip" style="color:${col};border-color:${col}">${c.clnt_name}</span>`;
   }).join('');
 }
 
 function updateFooterStats(){
   let totalIsr=0, totalMw=0, totalCl=0;
-  S.clients.forEach((c,i) => {
-    if(S.selectedIds.has(c.id)){
+  S.clients.forEach(c => {
+    if(S.selectedIds.has(c.clnt_id)){
       totalCl++;
-      const ld = S.allLayersData[c.id];
+      const ld = S.allLayersData[c.clnt_id];
       if(ld){
         totalIsr += (ld.sites||[]).length;
         totalMw  += (ld.edges||[]).length;
       }
     }
   });
-  document.getElementById('footIsr').textContent  = totalIsr||'—';
-  document.getElementById('footLink').textContent = totalMw||'—';
-  document.getElementById('footKlien').textContent= totalCl||'—';
+  const fi = document.getElementById('footIsr');
+  const fl = document.getElementById('footLink');
+  const fk = document.getElementById('footKlien');
+  if(fi) fi.textContent = totalIsr||'—';
+  if(fl) fl.textContent = totalMw||'—';
+  if(fk) fk.textContent = totalCl||'—';
 }
 
 /* ══════════════════════════════════════════════
@@ -1220,7 +1227,7 @@ function renderClientLayer(cid){
   clearClientLayers(cid);
   const ld = S.allLayersData[cid];
   if(!ld) return;
-  const ci = S.clients.findIndex(c=>c.id===cid);
+  const ci = S.clients.findIndex(c=>c.clnt_id===cid);
   const color = clientColor(ci<0?0:ci);
 
   // Edge layer
@@ -1277,12 +1284,12 @@ async function toggleClient(cid){
   setOverlay('');
 
   if(!S.allLayersData[cid]){
-    // spinner ringan — tidak hide peta
     const loadMsg = document.createElement('div');
     loadMsg.id = 'loadMsg_'+cid;
     loadMsg.className = 'state-msg';
     loadMsg.style.cssText = 'position:absolute;bottom:120px;left:50%;transform:translateX(-50%);z-index:800;background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:8px 18px;backdrop-filter:blur(8px);font-size:12px;pointer-events:none;gap:8px;display:flex';
-    loadMsg.innerHTML = `<div class="spinner"></div><span>Memuat ${S.clients.find(c=>c.id===cid)?.name||''}…</span>`;
+    const cname = S.clients.find(c=>c.clnt_id===cid)?.clnt_name||'';
+    loadMsg.innerHTML = `<div class="spinner"></div><span>Memuat ${cname}…</span>`;
     document.querySelector('.app').appendChild(loadMsg);
 
     try{
@@ -1297,14 +1304,13 @@ async function toggleClient(cid){
       return;
     }
     document.getElementById('loadMsg_'+cid)?.remove();
-    renderDropdown(); // update counts di dropdown
+    renderDropdown();
   }
 
   renderClientLayer(cid);
   updateFooterStats();
   updateLegend();
 
-  // Zoom ke bounds klien
   const pts = (S.allLayersData[cid].sites||[])
     .filter(s=>s.lat&&s.lng)
     .map(s=>[parseFloat(s.lat),parseFloat(s.lng)]);
@@ -1331,9 +1337,10 @@ document.getElementById('linkToggle').addEventListener('change', e => {
    ══════════════════════════════════════════════ */
 function updateLegend(){
   const inner = document.getElementById('legendInner');
-  const rows = S.clients.filter(c=>S.selectedIds.has(c.id)).map((c,i)=>{
+  if(!inner) return;
+  const rows = S.clients.filter(c=>S.selectedIds.has(c.clnt_id)).map(c=>{
     const col = clientColor(S.clients.indexOf(c));
-    return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div>${c.name}</div>`;
+    return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div>${c.clnt_name}</div>`;
   });
   inner.innerHTML = rows.join('');
 }
@@ -1371,13 +1378,13 @@ function openSitePanel(site, primaryCid){
   // Kumpulkan semua klien yang punya data di site ini (berdasar isr_id)
   const siteClients = [];
   S.clients.forEach((c,ci) => {
-    if(!S.selectedIds.has(c.id)) return;
-    const ld = S.allLayersData[c.id];
+    if(!S.selectedIds.has(c.clnt_id)) return;
+    const ld = S.allLayersData[c.clnt_id];
     if(!ld) return;
     const edges = (ld.edges||[]).filter(e =>
       e.from_isr_id == site.isr_id || e.to_isr_id == site.isr_id
     );
-    if(edges.length > 0 || c.id == primaryCid){
+    if(edges.length > 0 || c.clnt_id == primaryCid){
       siteClients.push({client:c, idx:ci, edges});
     }
   });
@@ -1403,10 +1410,10 @@ function openSitePanel(site, primaryCid){
 function renderTabs(siteClients, site, tabsEl, bodyEl){
   tabsEl.innerHTML = siteClients.map(sc => {
     const col = clientColor(sc.idx);
-    const active = sc.client.id === S.currentTabId ? ' active' : '';
-    return `<div class="panel-tab${active}" style="--tab-color:${col}" onclick="switchTab(${sc.client.id}, this)">
+    const active = sc.client.clnt_id === S.currentTabId ? ' active' : '';
+    return `<div class="panel-tab${active}" style="--tab-color:${col}" onclick="switchTab(${sc.client.clnt_id}, this)">
       <div class="panel-tab-dot"></div>
-      ${sc.client.name}
+      ${sc.client.clnt_name}
     </div>`;
   }).join('');
   renderPanelContent(site, S.currentTabId, bodyEl);
@@ -1448,7 +1455,7 @@ function licenseStatus(exp){
 }
 
 function buildPanelHTML(data, site, cid){
-  const ci = S.clients.findIndex(c=>c.id===cid);
+  const ci = S.clients.findIndex(c=>c.clnt_id===cid);
   const color = clientColor(ci<0?0:ci);
 
   // Filter edges untuk klien ini
@@ -1750,14 +1757,14 @@ function mobRenderSheet(){
   if(!list) return;
   list.innerHTML = S.clients.map((c,i) => {
     const col = clientColor(i);
-    const sel = S.selectedIds.has(c.id);
-    const ld = S.allLayersData[c.id];
-    const isrN = ld ? (ld.sites||[]).length : (c.isr_count||'—');
-    const mwN  = ld ? (ld.edges||[]).length : (c.mw_count||'—');
-    return `<div class="ms-item${sel?' selected':''}" onclick="mobToggleClient(${c.id})">
+    const sel = S.selectedIds.has(c.clnt_id);
+    const ld = S.allLayersData[c.clnt_id];
+    const isrN = ld ? (ld.sites||[]).length : (c.total_isr||'—');
+    const mwN  = ld ? (ld.edges||[]).length : (c.total_link||'—');
+    return `<div class="ms-item${sel?' selected':''}" onclick="mobToggleClient(${c.clnt_id})">
       <div class="ms-check"><span class="ms-check-mark">✓</span></div>
       <div class="ms-dot" style="background:${col}"></div>
-      <span class="ms-name">${c.name}</span>
+      <span class="ms-name">${c.clnt_name}</span>
       <div class="ms-stats">
         <span class="ms-stat-chip">${isrN}ISR</span>
         <span class="ms-stat-chip">${mwN}MW</span>
@@ -1779,14 +1786,14 @@ async function mobToggleClient(cid){
 function mobRenderChips(){
   const area = document.getElementById('mobSelChips');
   if(!area) return;
-  const sel = S.clients.filter(c => S.selectedIds.has(c.id));
+  const sel = S.clients.filter(c => S.selectedIds.has(c.clnt_id));
   if(sel.length === 0){
     area.innerHTML = `<span style="color:var(--muted);font-size:11px">Pilih klien…</span>`;
     return;
   }
   area.innerHTML = sel.map(c => {
     const col = clientColor(S.clients.indexOf(c));
-    return `<span class="chip" style="color:${col};border-color:${col};font-size:10px;padding:2px 6px">${c.name}</span>`;
+    return `<span class="chip" style="color:${col};border-color:${col};font-size:10px;padding:2px 6px">${c.clnt_name}</span>`;
   }).join('');
 }
 
@@ -1794,8 +1801,8 @@ function mobRenderChips(){
 function mobUpdateStats(){
   let isr=0, mw=0;
   S.clients.forEach(c => {
-    if(!S.selectedIds.has(c.id)) return;
-    const ld = S.allLayersData[c.id];
+    if(!S.selectedIds.has(c.clnt_id)) return;
+    const ld = S.allLayersData[c.clnt_id];
     if(ld){ isr += (ld.sites||[]).length; mw += (ld.edges||[]).length; }
   });
   const mi = document.getElementById('mobIsr');
@@ -1806,15 +1813,15 @@ function mobUpdateStats(){
 
 /* ── Legend di drawer ── */
 function mobUpdateLegend(){
-  updateLegend(); // update desktop legend juga
+  updateLegend();
   const wrap = document.getElementById('mobDrawerLegend');
   const inner = document.getElementById('mobLegendItems');
   if(!wrap || !inner) return;
-  const sel = S.clients.filter(c => S.selectedIds.has(c.id));
+  const sel = S.clients.filter(c => S.selectedIds.has(c.clnt_id));
   wrap.style.display = sel.length ? '' : 'none';
   inner.innerHTML = sel.map(c => {
     const col = clientColor(S.clients.indexOf(c));
-    return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div>${c.name}</div>`;
+    return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div>${c.clnt_name}</div>`;
   }).join('');
 }
 
