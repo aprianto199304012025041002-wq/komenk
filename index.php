@@ -908,151 +908,285 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script>
-/* ════════════════════════════════════════════════════
-   KOMENK — JS Core
-   ════════════════════════════════════════════════════ */
+!function(t){"function"==typeof define&&define.amd?define(t):t()}((function(){"use strict";const t=L.extend({},L.DomUtil);L.extend(L.DomUtil,{setTransform:function(o,e,i,n,a){var s=e||new L.Point(0,0);if(!n)return e=s._round(),t.setTransform.apply(this,arguments);s=s.rotateFrom(n,a),o.style[L.DomUtil.TRANSFORM]="translate3d("+s.x+"px,"+s.y+"px,0)"+(i?" scale("+i+")":"")+" rotate("+n+"rad)"},setPosition:function(o,e,i,n,a){if(!i)return t.setPosition.apply(this,arguments);o._leaflet_pos=e,L.Browser.any3d?L.DomUtil.setTransform(o,e,a,i,n):(o.style.left=e.x+"px",o.style.top=e.y+"px")},DEG_TO_RAD:Math.PI/180,RAD_TO_DEG:180/Math.PI}),L.Draggable.include({}),L.extend(L.Point.prototype,{rotate:function(t){return this.rotateFrom(t,new L.Point(0,0))},rotateFrom:function(t,o){if(!t)return this;var e=Math.sin(t),i=Math.cos(t),n=o.x,a=o.y,s=this.x-n,r=this.y-a;return new L.Point(s*i-r*e+n,s*e+r*i+a)}});const o=L.extend({},L.DivOverlay.prototype);L.DivOverlay.include({getEvents:function(){return L.extend(o.getEvents.apply(this,arguments),{rotate:this._updatePosition})},_updatePosition:function(){if(this._map&&(o._updatePosition.apply(this,arguments),this._map&&this._map._rotate&&this._zoomAnimated)){var t=this._getAnchor(),e=L.DomUtil.getPosition(this._container).subtract(t);L.DomUtil.setPosition(this._container,this._map.rotatedPointToMapPanePoint(e).add(t))}}});const e=L.extend({},L.Popup.prototype);L.Popup.include({_animateZoom:function(t){if(e._animateZoom.apply(this,arguments),this._map&&this._map._rotate){var o=this._getAnchor(),i=L.DomUtil.getPosition(this._container).subtract(o);L.DomUtil.setPosition(this._container,this._map.rotatedPointToMapPanePoint(i).add(o))}},_adjustPan:function(){if(!(!this.options.autoPan||this._map._panAnim&&this._map._panAnim._inProgress))if(this._autopanning)this._autopanning=!1;else{var t=this._map,o=parseInt(L.DomUtil.getStyle(this._container,"marginBottom"),10)||0,e=this._container.offsetHeight+o,i=this._containerWidth,n=new L.Point(this._containerLeft,-e-this._containerBottom);n._add(L.DomUtil.getPosition(this._container));var a=n._add(this._map._getMapPanePos()),s=L.point(this.options.autoPanPadding),r=L.point(this.options.autoPanPaddingTopLeft||s),h=L.point(this.options.autoPanPaddingBottomRight||s),_=t.getSize(),d=0,p=0;a.x+i+h.x>_.x&&(d=a.x+i-_.x+h.x),a.x-d-r.x<0&&(d=a.x-r.x),a.y+e+h.y>_.y&&(p=a.y+e-_.y+h.y),a.y-p-r.y<0&&(p=a.y-r.y),(d||p)&&(this.options.keepInView&&(this._autopanning=!0),t.fire("autopanstart").panBy([d,p]))}}});const i=L.extend({},L.Tooltip.prototype);L.Tooltip.include({_animateZoom:function(t){if(!this._map._rotate)return i._animateZoom.apply(this,arguments);var o=this._map._latLngToNewLayerPoint(this._latlng,t.zoom,t.center);o=this._map.rotatedPointToMapPanePoint(o),this._setPosition(o)},_updatePosition:function(){if(!this._map._rotate)return i._updatePosition.apply(this,arguments);var t=this._map.latLngToLayerPoint(this._latlng);t=this._map.rotatedPointToMapPanePoint(t),this._setPosition(t)}}),L.extend({},L.Icon.prototype),L.Icon.include({_setIconStyles:function(t,o){var e=this.options,i=e[o+"Size"];"number"==typeof i&&(i=[i,i]);var n=L.point(i),a=L.point("shadow"===o&&e.shadowAnchor||e.iconAnchor||n&&n.divideBy(2,!0));t.className="leaflet-marker-"+o+" "+(e.className||""),a&&(t.style.marginLeft=-a.x+"px",t.style.marginTop=-a.y+"px",t.style[L.DomUtil.TRANSFORM+"Origin"]=a.x+"px "+a.y+"px 0px"),n&&(t.style.width=n.x+"px",t.style.height=n.y+"px")}});const n=L.extend({},L.Marker.prototype);var a;L.Marker.mergeOptions({rotation:0,rotateWithView:!1,scale:void 0});var s={_onDrag:function(t){var o=this._marker,e=o.options.rotation||o.options.rotateWithView,i=o._shadow,n=L.DomUtil.getPosition(o._icon);!e&&i&&L.DomUtil.setPosition(i,n),o._map._rotate&&(n=o._map.mapPanePointToRotatedPoint(n));var a=o._map.layerPointToLatLng(n);o._latlng=a,t.latlng=a,t.oldLatLng=this._oldLatLng,e?o.setLatLng(a):o.fire("move",t),o.fire("drag",t)},_onDragEnd:function(t){this._marker._map._rotate&&this._marker.update(),a._onDragEnd.apply(this,arguments)}};L.Marker.include({getEvents:function(){return L.extend(n.getEvents.apply(this,arguments),{rotate:this.update})},_initInteraction:function(){var t=n._initInteraction.apply(this,arguments);return this.dragging&&this.dragging.enabled()&&this._map&&this._map._rotate&&(a=a||Object.getPrototypeOf(this.dragging),this.dragging.disable(),Object.assign(this.dragging,{_onDrag:s._onDrag.bind(this.dragging),_onDragEnd:s._onDragEnd.bind(this.dragging)}),this.dragging.enable()),t},_setPos:function(t){this._map._rotate&&(t=this._map.rotatedPointToMapPanePoint(t));var o=this.options.rotation||0;this.options.rotateWithView&&(o+=this._map._bearing),this._icon&&L.DomUtil.setPosition(this._icon,t,o,t,this.options.scale),this._shadow&&L.DomUtil.setPosition(this._shadow,t,o,t,this.options.scale),this._zIndex=t.y+this.options.zIndexOffset,this._resetZIndex()},setRotation:function(t){this.options.rotation=t,this.update()}});const r=L.extend({},L.GridLayer.prototype);L.GridLayer.include({getEvents:function(){var t=r.getEvents.apply(this,arguments);return this._map._rotate&&!this.options.updateWhenIdle&&(this._onRotate||(this._onRotate=L.Util.throttle(this._onMoveEnd,this.options.updateInterval,this)),t.rotate=this._onRotate),t},_getTiledPixelBounds:function(t){return this._map._rotate?this._map._getNewPixelBounds(t,this._tileZoom):r._getTiledPixelBounds.apply(this,arguments)}});const h=L.extend({},L.Renderer.prototype);L.Renderer.include({getEvents:function(){return L.extend(h.getEvents.apply(this,arguments),{rotate:this._update})},onAdd:function(){h.onAdd.apply(this,arguments),L.version<="1.9.3"&&this._container.classList.add("leaflet-zoom-animated")},_updateTransform:function(t,o){if(!this._map._rotate)return h._updateTransform.apply(this,arguments);var e=this._map.getZoomScale(o,this._zoom),i=this._map._latLngToNewLayerPoint(this._topLeft,o,t);L.DomUtil.setTransform(this._container,i,e)},_update:function(){if(!this._map._rotate)return h._update.apply(this,arguments);this._bounds=this._map._getPaddedPixelBounds(this.options.padding),this._topLeft=this._map.layerPointToLatLng(this._bounds.min),this._center=this._map.getCenter(),this._zoom=this._map.getZoom()}});const _=L.extend({},L.Map.prototype);L.Map.mergeOptions({rotate:!1,bearing:0}),L.Map.include({initialize:function(t,o){o.rotate&&(this._rotate=!0,this._bearing=0),_.initialize.apply(this,arguments),this.options.rotate&&this.setBearing(this.options.bearing)},containerPointToLayerPoint:function(t){return this._rotate?L.point(t).subtract(this._getMapPanePos()).rotateFrom(-this._bearing,this._getRotatePanePos()).subtract(this._getRotatePanePos()):_.containerPointToLayerPoint.apply(this,arguments)},layerPointToContainerPoint:function(t){return this._rotate?L.point(t).add(this._getRotatePanePos()).rotateFrom(this._bearing,this._getRotatePanePos()).add(this._getMapPanePos()):_.layerPointToContainerPoint.apply(this,arguments)},rotatedPointToMapPanePoint:function(t){return L.point(t).rotate(this._bearing)._add(this._getRotatePanePos())},mapPanePointToRotatedPoint:function(t){return L.point(t)._subtract(this._getRotatePanePos()).rotate(-this._bearing)},mapBoundsToContainerBounds:function(t){if(!this._rotate&&_.mapBoundsToContainerBounds)return _.mapBoundsToContainerBounds.apply(this,arguments);const o=this.getPixelOrigin(),e=this.layerPointToContainerPoint(this.project(t.getNorthWest())._subtract(o)),i=this.layerPointToContainerPoint(this.project(t.getNorthEast())._subtract(o)),n=this.layerPointToContainerPoint(this.project(t.getSouthWest())._subtract(o)),a=this.layerPointToContainerPoint(this.project(t.getSouthEast())._subtract(o));return L.bounds([L.point(Math.min(e.x,i.x,a.x,n.x),Math.min(e.y,i.y,a.y,n.y)),L.point(Math.max(e.x,i.x,a.x,n.x),Math.max(e.y,i.y,a.y,n.y))])},getBounds:function(){if(!this._rotate)return _.getBounds.apply(this,arguments);var t=this.getSize();return new L.LatLngBounds([this.containerPointToLatLng([0,0]),this.containerPointToLatLng([t.x,0]),this.containerPointToLatLng([t.x,t.y]),this.containerPointToLatLng([0,t.y])])},setBearing:function(t){if(L.Browser.any3d&&this._rotate){var o=L.Util.wrapNum(t,[0,360])*L.DomUtil.DEG_TO_RAD,e=this._getPixelCenter(),i=this._getRotatePanePos().rotateFrom(-this._bearing,e),n=i.rotateFrom(o,e);L.DomUtil.setPosition(this._rotatePane,i,o,e),this._pivot=e,this._bearing=o,this._rotatePanePos=n,this.fire("rotate")}},getBearing:function(){return this._bearing*L.DomUtil.RAD_TO_DEG},_initPanes:function(){var t=this._panes={};this._paneRenderers={},this._mapPane=this.createPane("mapPane",this._container),L.DomUtil.setPosition(this._mapPane,new L.Point(0,0)),this._rotate?(this._rotatePane=this.createPane("rotatePane",this._mapPane),this._norotatePane=this.createPane("norotatePane",this._mapPane),this.createPane("tilePane",this._rotatePane),this.createPane("overlayPane",this._rotatePane),this.createPane("shadowPane",this._norotatePane),this.createPane("markerPane",this._norotatePane),this.createPane("tooltipPane",this._norotatePane),this.createPane("popupPane",this._norotatePane)):(this.createPane("tilePane"),this.createPane("overlayPane"),this.createPane("shadowPane"),this.createPane("markerPane"),this.createPane("tooltipPane"),this.createPane("popupPane")),this.options.markerZoomAnimation||(L.DomUtil.addClass(t.markerPane,"leaflet-zoom-hide"),L.DomUtil.addClass(t.shadowPane,"leaflet-zoom-hide"))},panInside(t,o){if(!this._rotate||Math.abs(this._bearing).toFixed(1)<.1)return _.panInside.apply(this,arguments);o=o||{};const e=L.point(o.paddingTopLeft||o.padding||[0,0]),i=L.point(o.paddingBottomRight||o.padding||[0,0]),n=this._container.getBoundingClientRect(),a=this.latLngToContainerPoint(t),s=L.bounds([L.point(n),L.point(n).add(this.getSize())]),r=s.getCenter(),h=L.bounds([s.min.add(e),s.max.subtract(i)]),d=h.getSize();if(!h.contains(a)){this._enforcingBounds=!0;const t=a.subtract(h.getCenter()),e=h.extend(a).getSize().subtract(d);r.x+=t.x<0?-e.x:e.x,r.y+=t.y<0?-e.y:e.y,this.panTo(this.containerPointToLatLng(r),o),this._enforcingBounds=!1}return this},getBoundsZoom(t,o,e){if(!this._rotate||Math.abs(this._bearing).toFixed(1)<.1)return _.getBoundsZoom.apply(this,arguments);t=L.latLngBounds(t),e=L.point(e||[0,0]);let i=this.getZoom()||0;const n=this.getMinZoom(),a=this.getMaxZoom(),s=this.getSize().subtract(e),r=this.mapBoundsToContainerBounds(t).getSize(),h=this.options.zoomSnap,d=s.x/r.x,p=s.y/r.y,l=o?Math.max(d,p):Math.min(d,p);return i=this.getScaleZoom(l,i),h&&(i=Math.round(i/(h/100))*(h/100),i=o?Math.ceil(i/h)*h:Math.floor(i/h)*h),Math.max(n,Math.min(a,i))},_getCenterOffset:function(t){var o=_._getCenterOffset.apply(this,arguments);return this._rotate&&(o=o.rotate(this._bearing)),o},_getRotatePanePos:function(){return this._rotatePanePos||new L.Point(0,0)},_getNewPixelOrigin:function(t,o){if(!this._rotate)return _._getNewPixelOrigin.apply(this,arguments);var e=this.getSize()._divideBy(2);return this.project(t,o).rotate(this._bearing)._subtract(e)._add(this._getMapPanePos())._add(this._getRotatePanePos()).rotate(-this._bearing)._round()},_getNewPixelBounds:function(t,o){if(t=t||this.getCenter(),o=o||this.getZoom(),!this._rotate&&_._getNewPixelBounds)return _._getNewPixelBounds.apply(this,arguments);var e=this._animatingZoom?Math.max(this._animateToZoom,this.getZoom()):this.getZoom(),i=this.getZoomScale(e,o),n=this.project(t,o).floor(),a=this.getSize(),s=new L.Bounds([this.containerPointToLayerPoint([0,0]).floor(),this.containerPointToLayerPoint([a.x,0]).floor(),this.containerPointToLayerPoint([0,a.y]).floor(),this.containerPointToLayerPoint([a.x,a.y]).floor()]).getSize().divideBy(2*i);return new L.Bounds(n.subtract(s),n.add(s))},_getPixelCenter:function(){return!this._rotate&&_._getPixelCenter?_._getPixelCenter.apply(this,arguments):this.getSize()._divideBy(2)._subtract(this._getMapPanePos())},_getPaddedPixelBounds:function(t){if(!this._rotate&&_._getPaddedPixelBounds)return _._getPaddedPixelBounds.apply(this,arguments);var o=t,e=this.getSize(),i=e.multiplyBy(-o),n=e.multiplyBy(1+o);return new L.Bounds([this.containerPointToLayerPoint([i.x,i.y]).floor(),this.containerPointToLayerPoint([i.x,n.y]).floor(),this.containerPointToLayerPoint([n.x,i.y]).floor(),this.containerPointToLayerPoint([n.x,n.y]).floor()])},_handleGeolocationResponse:function(t){if(this._container._leaflet_id){var o=t.coords.latitude,e=t.coords.longitude,i=t.coords.heading,n=new L.LatLng(o,e),a=n.toBounds(t.coords.accuracy),s=this._locateOptions;if(s.setView){var r=this.getBoundsZoom(a);this.setView(n,s.maxZoom?Math.min(r,s.maxZoom):r)}var h={latlng:n,bounds:a,timestamp:t.timestamp,heading:i};for(var _ in t.coords)"number"==typeof t.coords[_]&&(h[_]=t.coords[_]);this.fire("locationfound",h)}}}),L.Map.CompassBearing=L.Handler.extend({initialize:function(t){this._map=t,"ondeviceorientationabsolute"in window?this.__deviceOrientationEvent="deviceorientationabsolute":"ondeviceorientation"in window&&(this.__deviceOrientationEvent="deviceorientation"),this._throttled=L.Util.throttle(this._onDeviceOrientation,100,this)},addHooks:function(){this._map._rotate&&this.__deviceOrientationEvent?L.DomEvent.on(window,this.__deviceOrientationEvent,this._throttled,this):this.disable()},removeHooks:function(){this._map._rotate&&this.__deviceOrientationEvent&&L.DomEvent.off(window,this.__deviceOrientationEvent,this._throttled,this)},_onDeviceOrientation:function(t){var o=t.webkitCompassHeading||t.alpha,e=0;!t.absolute&&t.webkitCompassHeading&&(o=360-o),t.absolute||void 0===window.orientation||(e=window.orientation),this._map.setBearing(o-e)}}),L.Map.addInitHook("addHandler","compassBearing",L.Map.CompassBearing),L.Map.mergeOptions({trackContainerMutation:!1}),L.Map.ContainerMutation=L.Handler.extend({addHooks:function(){this._observer||(this._observer=new MutationObserver(L.Util.bind(this._map.invalidateSize,this._map))),this._observer.observe(this._map.getContainer(),{childList:!1,attributes:!0,characterData:!1,subtree:!1,attributeFilter:["style"]})},removeHooks:function(){this._observer.disconnect()}}),L.Map.addInitHook("addHandler","trackContainerMutation",L.Map.ContainerMutation),L.Map.mergeOptions({bounceAtZoomLimits:!0}),L.Map.TouchGestures=L.Handler.extend({initialize:function(t){this._map=t,this.rotate=!!this._map.options.touchRotate,this.zoom=!!this._map.options.touchZoom},addHooks:function(){L.DomEvent.on(this._map._container,"touchstart",this._onTouchStart,this)},removeHooks:function(){L.DomEvent.off(this._map._container,"touchstart",this._onTouchStart,this)},_onTouchStart:function(t){var o=this._map;if(t.touches&&2===t.touches.length&&!o._animatingZoom&&!this._zooming&&!this._rotating){var e=o.mouseEventToContainerPoint(t.touches[0]),i=o.mouseEventToContainerPoint(t.touches[1]),n=e.subtract(i);this._centerPoint=o.getSize()._divideBy(2),this._startLatLng=o.containerPointToLatLng(this._centerPoint),this.zoom?("center"!==o.options.touchZoom&&(this._pinchStartLatLng=o.containerPointToLatLng(e.add(i)._divideBy(2))),this._startDist=e.distanceTo(i),this._startZoom=o.getZoom(),this._zooming=!0):this._zooming=!1,this.rotate?(this._startTheta=Math.atan(n.x/n.y),this._startBearing=o.getBearing(),n.y<0&&(this._startBearing+=180),this._rotating=!0):this._rotating=!1,this._moved=!1,o._stop(),L.DomEvent.on(document,"touchmove",this._onTouchMove,this).on(document,"touchend touchcancel",this._onTouchEnd,this),L.DomEvent.preventDefault(t)}},_onTouchMove:function(t){if(t.touches&&2===t.touches.length&&(this._zooming||this._rotating)){var o,e=this._map,i=e.mouseEventToContainerPoint(t.touches[0]),n=e.mouseEventToContainerPoint(t.touches[1]),a=i.subtract(n),s=i.distanceTo(n)/this._startDist;if(this._rotating){var r=(Math.atan(a.x/a.y)-this._startTheta)*L.DomUtil.RAD_TO_DEG;a.y<0&&(r+=180),r&&e.setBearing(this._startBearing-r)}if(this._zooming)if(this._zoom=e.getScaleZoom(s,this._startZoom),!e.options.bounceAtZoomLimits&&(this._zoom<e.getMinZoom()&&s<1||this._zoom>e.getMaxZoom()&&s>1)&&(this._zoom=e._limitZoom(this._zoom)),"center"===e.options.touchZoom){if(this._center=this._startLatLng,1===s)return}else{if(o=i._add(n)._divideBy(2)._subtract(this._centerPoint),1===s&&0===o.x&&0===o.y)return;var h=-e.getBearing()*L.DomUtil.DEG_TO_RAD;this._center=e.unproject(e.project(this._pinchStartLatLng).subtract(o.rotate(h)))}this._moved||(e._moveStart(!0,!1),this._moved=!0),L.Util.cancelAnimFrame(this._animRequest);var _=e._move.bind(e,this._center,this._zoom,{pinch:!0,round:!1},void 0);this._animRequest=L.Util.requestAnimFrame(_,this,!0),L.DomEvent.preventDefault(t)}},_onTouchEnd:function(){this._moved&&(this._zooming||this._rotating)?(this._zooming=!1,this._rotating=!1,L.Util.cancelAnimFrame(this._animRequest),L.DomEvent.off(document,"touchmove",this._onTouchMove,this).off(document,"touchend touchcancel",this._onTouchEnd,this),this.zoom&&(this._map.options.zoomAnimation?this._map._animateZoom(this._center,this._map._limitZoom(this._zoom),!0,this._map.options.zoomSnap):this._map._resetView(this._center,this._map._limitZoom(this._zoom)))):this._zooming=!1}}),L.Map.addInitHook("addHandler","touchGestures",L.Map.TouchGestures),L.Map.mergeOptions({touchRotate:!1}),L.Map.TouchRotate=L.Handler.extend({addHooks:function(){this._map.touchGestures.enable(),this._map.touchGestures.rotate=!0},removeHooks:function(){this._map.touchGestures.rotate=!1}}),L.Map.addInitHook("addHandler","touchRotate",L.Map.TouchRotate),L.Map.mergeOptions({shiftKeyRotate:!0}),L.Map.ShiftKeyRotate=L.Handler.extend({addHooks:function(){L.DomEvent.on(this._map._container,"wheel",this._handleShiftScroll,this),this._map.shiftKeyRotate.rotate=!0},removeHooks:function(){L.DomEvent.off(this._map._container,"wheel",this._handleShiftScroll,this),this._map.shiftKeyRotate.rotate=!1},_handleShiftScroll:function(t){t.shiftKey?(t.preventDefault(),this._map.scrollWheelZoom.disable(),this._map.setBearing(this._map._bearing*L.DomUtil.RAD_TO_DEG+5*Math.sign(t.deltaY))):this._map.scrollWheelZoom.enable()}}),L.Map.addInitHook("addHandler","shiftKeyRotate",L.Map.ShiftKeyRotate),L.Map.addInitHook((function(){this.scrollWheelZoom.enabled()&&this.shiftKeyRotate.enabled()&&(this.scrollWheelZoom.disable(),this.scrollWheelZoom.enable())})),L.Map.mergeOptions({touchZoom:L.Browser.touch,bounceAtZoomLimits:!1}),L.Map.TouchZoom=L.Handler.extend({addHooks:function(){L.DomUtil.addClass(this._map._container,"leaflet-touch-zoom"),this._map.touchGestures.enable(),this._map.touchGestures.zoom=!0},removeHooks:function(){L.DomUtil.removeClass(this._map._container,"leaflet-touch-zoom"),this._map.touchGestures.zoom=!1}}),L.Map.addInitHook("addHandler","touchZoom",L.Map.TouchZoom),L.Control.Rotate=L.Control.extend({options:{position:"topleft",closeOnZeroBearing:!0},onAdd:function(t){var o=this._container=L.DomUtil.create("div","leaflet-control-rotate leaflet-bar"),e=this._arrow=L.DomUtil.create("span","leaflet-control-rotate-arrow");e.style.backgroundImage="url(\"data:image/svg+xml;charset=utf-8,%3Csvg width='29' height='29' viewBox='0 0 29 29' xmlns='http://www.w3.org/2000/svg' fill='%23333'%3E%3Cpath d='M10.5 14l4-8 4 8h-8z'/%3E%3Cpath d='M10.5 16l4 8 4-8h-8z' fill='%23ccc'/%3E%3C/svg%3E\")",e.style.cursor="grab",e.style.display="block",e.style.width="100%",e.style.height="100%",e.style.backgroundRepeat="no-repeat",e.style.backgroundPosition="50%";var i=this._link=L.DomUtil.create("a","leaflet-control-rotate-toggle",o);return i.appendChild(e),i.href="#",i.title="Rotate map",L.DomEvent.on(i,"dblclick",L.DomEvent.stopPropagation).on(i,"mousedown",this._handleMouseDown,this).on(i,"click",L.DomEvent.stop).on(i,"click",this._cycleState,this).on(i,"click",this._refocusOnMap,this),L.Browser.any3d||L.DomUtil.addClass(i,"leaflet-disabled"),this._restyle(),t.on("rotate",this._restyle,this),this._follow=!1,this._canFollow=!1,this.options.closeOnZeroBearing&&0===t.getBearing()&&(o.style.display="none"),o},onRemove:function(t){t.off("rotate",this._restyle,this)},_handleMouseDown:function(t){L.DomEvent.stop(t),this.dragging=!0,this.dragstartX=t.pageX,this.dragstartY=t.pageY,L.DomEvent.on(document,"mousemove",this._handleMouseDrag,this).on(document,"mouseup",this._handleMouseUp,this)},_handleMouseUp:function(t){L.DomEvent.stop(t),this.dragging=!1,L.DomEvent.off(document,"mousemove",this._handleMouseDrag,this).off(document,"mouseup",this._handleMouseUp,this)},_handleMouseDrag:function(t){if(this.dragging){var o=t.clientX-this.dragstartX;this._map.setBearing(o)}},_cycleState:function(t){if(this._map){var o=this._map;o.touchRotate.enabled()||o.compassBearing.enabled()?o.compassBearing.enabled()?(o.compassBearing.disable(),o.setBearing(0),this.options.closeOnZeroBearing&&o.touchRotate.enable()):(o.touchRotate.disable(),o.compassBearing.enable()):o.touchRotate.enable(),this._restyle()}},_restyle:function(){if(this._map.options.rotate){var t=this._map,o=t.getBearing();this._arrow.style.transform="rotate("+o+"deg)",o&&this.options.closeOnZeroBearing&&(this._container.style.display="block"),t.compassBearing.enabled()?this._link.style.backgroundColor="orange":t.touchRotate.enabled()?this._link.style.backgroundColor=null:(this._link.style.backgroundColor="grey",0===o&&this.options.closeOnZeroBearing&&(this._container.style.display="none"))}else L.DomUtil.addClass(this._link,"leaflet-disabled")}}),L.control.rotate=function(t){return new L.Control.Rotate(t)},L.Map.mergeOptions({rotateControl:!0}),L.Map.addInitHook((function(){if(this.options.rotateControl){var t="object"==typeof this.options.rotateControl?this.options.rotateControl:{};this.rotateControl=L.control.rotate(t),this.addControl(this.rotateControl)}}))}));
+//# sourceMappingURL=leaflet-rotate.js.map
 
-/* ── State ── */
-const S = {
-  clients:[],selectedIds:new Set(),
-  allLayersData:{},
-  hexLayers:{},edgeLayers:{},
-  currentHexLayer:null,
-  showLinks:false,
-  userMarker:null,userLat:null,userLng:null,
-  locWatchId:null,
-  mapBearing:0,
-  currentSiteData:null,
-  currentTabId:null,
-  legendOpen:false,
-  dropdownOpen:false,
-};
+</script>
+<script>
 
-/* ── Client Colors ── */
-const CLIENT_COLORS = [
-  '#00e5ff','#ff6b35','#a78bfa','#22c55e','#eab308',
-  '#f472b6','#38bdf8','#fb923c','#4ade80','#c084fc'
-];
-function clientColor(i){ return CLIENT_COLORS[i % CLIENT_COLORS.length] }
+const API = { clients:'api/clients.php', isr:'api/isr.php' };
 
-/* ── Basemap tiles ── */
-const TILES = {
-  dark:{
-    url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attr:'&copy; <a href="https://carto.com/">CARTO</a>'
-  },
-  bright:{
-    url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attr:'&copy; <a href="https://carto.com/">CARTO</a>'
-  },
-  satellite:{
-    url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attr:'Tiles &copy; Esri'
-  }
-};
-
-/* ══════════════════════════════════════════════
-   MAP INIT
-   ══════════════════════════════════════════════ */
-const map = L.map('map',{
-  center:[-2.5,118],zoom:5,
-  zoomControl:false,
-  attributionControl:true,
-});
+const map = L.map('map',{zoomControl:false,wheelDebounceTime:300,wheelPxPerZoomLevel:300,rotate:true,touchRotate:true,bearing:0,rotateControl:false});
 L.control.zoom({position:'topright'}).addTo(map);
+map.setView([-7.80,110.37],11);
+// Basemap switcher — diinisialisasi lebih awal agar dark tile langsung dimuat
+const BASEMAPS={
+  dark:{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',attr:'\u00A9 OpenStreetMap \u00A9 CARTO',sub:'abcd'},
+  bright:{url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',attr:'\u00A9 OpenStreetMap \u00A9 CARTO',sub:'abcd'},
+  satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',attr:'\u00A9 Esri',sub:'',maxNativeZoom:19}
+};
+let currentBaseTile=null;
+function setBasemap(key){
+  if(currentBaseTile) map.removeLayer(currentBaseTile);
+  const b=BASEMAPS[key]||BASEMAPS.dark;
+  currentBaseTile=L.tileLayer(b.url,{attribution:b.attr,subdomains:b.sub||'',maxNativeZoom:b.maxNativeZoom||20,maxZoom:22});
+  if(key==='satellite'){
+    currentBaseTile.on('tileerror',(ev)=>{
+      const nz=b.maxNativeZoom||19;
+      if(map.getZoom()>nz) map.setZoom(nz,{animate:true});
+    });
+  }
+  currentBaseTile.addTo(map);
+  currentBaseTile.bringToBack();
+  document.querySelector('.leaflet-container').style.background=key==='dark'?'#0c0f14':'#e8e8e8';
+  // Sinkronkan kedua selector (desktop + drawer mobile)
+  const sel=document.getElementById('basemapSel'); if(sel) sel.value=key;
+  const mobSel=document.getElementById('mobBasemap'); if(mobSel) mobSel.value=key;
+  // Basemap dark/bright ikut menukar tema UI (panel, chip, dll). Satelit tidak mengubah tema.
+  if(key==='dark'||key==='bright') applyUiTheme(key==='bright');
+}
+setBasemap('dark');
 
-let currentTileLayer = L.tileLayer(TILES.dark.url,{
-  maxZoom:19,subdomains:'abcd',attribution:TILES.dark.attr
-}).addTo(map);
-
-/* ── Remove Leaflet default logo from controls (hilangkan logo leaflet) ── */
-map.attributionControl.setPrefix('');
-
-/* ── Show welcome msg tapi peta tetap ada ── */
-function setOverlay(html){
-  const el = document.getElementById('stateOverlay');
-  el.innerHTML = html;
-  el.style.pointerEvents = html ? 'none' : 'none';
+/* ── TEMA UI (dark/bright) — toggle terpisah dari basemap, tapi saling sinkron ── */
+function applyUiTheme(isBright){
+  document.documentElement.setAttribute('data-theme',isBright?'bright':'dark');
+  const t1=document.getElementById('themeToggle'); if(t1) t1.checked=isBright;
+  const t2=document.getElementById('mobThemeToggle'); if(t2) t2.checked=isBright;
+}
+function mobSwitchTheme(isBright){
+  applyUiTheme(isBright);
+  const cur=document.getElementById('basemapSel')?.value;
+  if(cur==='dark'||cur==='bright') setBasemap(isBright?'bright':'dark');
 }
 
-/* ══════════════════════════════════════════════
-   THEME
-   ══════════════════════════════════════════════ */
-const themeToggle = document.getElementById('themeToggle');
-themeToggle.addEventListener('change', () => {
-  const isDark = !themeToggle.checked;
-  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'bright');
-  // Jika basemap sinkron dengan tema, update tiles juga
-  const bsel = document.getElementById('basemapSel').value;
-  if(bsel === 'dark' || bsel === 'bright'){
-    if(isDark && bsel !== 'dark'){
-      document.getElementById('basemapSel').value = 'dark';
-      switchBasemap('dark');
-    } else if(!isDark && bsel !== 'bright'){
-      document.getElementById('basemapSel').value = 'bright';
-      switchBasemap('bright');
-    }
-  }
-});
+// Pane management ditangani oleh leaflet-rotate plugin
 
-function switchBasemap(key){
-  const t = TILES[key] || TILES.dark;
-  map.removeLayer(currentTileLayer);
-  currentTileLayer = L.tileLayer(t.url,{maxZoom:19,subdomains:'abcd',attribution:t.attr}).addTo(map);
-  currentTileLayer.bringToBack();
-}
-
-document.getElementById('basemapSel').addEventListener('change', e => {
-  const v = e.target.value;
-  switchBasemap(v);
-  if(v === 'dark'){
-    document.documentElement.setAttribute('data-theme','dark');
-    themeToggle.checked = false;
-  } else if(v === 'bright'){
-    document.documentElement.setAttribute('data-theme','bright');
-    themeToggle.checked = true;
-  }
-});
-
-/* ══════════════════════════════════════════════
-   LAYOUT: posisi floating elements
-   ══════════════════════════════════════════════ */
+// 1 scroll notch = tepat 1 zoom level, debounce ketat
+map.scrollWheelZoom.disable();
+(()=>{
+  let _wt=null;
+  const panel=document.getElementById('detailPanel');
+  document.getElementById('map').addEventListener('wheel',(ev)=>{
+    if(panel.contains(ev.target)) return;
+    ev.preventDefault();
+    if(_wt) return;
+    _wt=setTimeout(()=>{ _wt=null; },350);
+    const delta=ev.deltaY||ev.detail||(-ev.wheelDelta);
+    map.setZoom(map.getZoom()+(delta>0?-1:1),{animate:true});
+  },{passive:false});
+})();
+/* ── LAYOUT: posisi floatControls menyesuaikan lebar floatLogo (desktop) ── */
 function recalcLayout(){
-  const logo = document.getElementById('floatLogo');
-  const ctrl = document.getElementById('floatControls');
-  const isDesktop = window.innerWidth >= 769;
-  if(isDesktop){
-    const logoRect = logo.getBoundingClientRect();
-    ctrl.style.top  = '12px';
-    ctrl.style.left = (logoRect.right + 8) + 'px';
+  const logo=document.getElementById('floatLogo');
+  const ctrl=document.getElementById('floatControls');
+  if(!logo||!ctrl) return;
+  if(window.innerWidth>=769){
+    const r=logo.getBoundingClientRect();
+    ctrl.style.top='12px';
+    ctrl.style.left=(r.right+8)+'px';
   }
-  // Mobile: semua dikontrol CSS
-}
-window.addEventListener('resize', recalcLayout);
-
-/* ══════════════════════════════════════════════
-   CLIENT API
-   ══════════════════════════════════════════════ */
-async function fetchClients(){
-  const r = await fetch('api/clients.php');
-  const d = await r.json();
-  if(!d.success) throw new Error(d.error||'Gagal load klien');
-  return d.data;
 }
 
-async function fetchSiteData(clientId){
-  const r = await fetch(`api/isr.php?clnt_id=${clientId}`);
-  const d = await r.json();
-  if(!d.success) throw new Error(d.error||'Gagal load ISR');
-  const rows = d.raw || [];
-  let sites = clusterISRtoSites(rows);
-  // prefix ID agar tidak tabrakan antar klien
-  sites.forEach(s=>{ s.id=`c${clientId}_${s.id}`; });
-  const edges = buildMWLinks(sites, rows);
-  const connectedIds = new Set();
-  edges.forEach(e=>{ connectedIds.add(e.siteA.id); connectedIds.add(e.siteB.id); });
-  sites = sites.filter(s=>!s.ghost||connectedIds.has(s.id));
-  return { sites, edges, rows };
+let allClients=[], selectedIds=new Set(), mapLayers=L.layerGroup().addTo(map);
+// ── EDGE CANVAS — zero-delay karena digambar ulang tiap frame native ──
+// Dibuat sebagai overlay div di rotatePane sehingga ikut transform tile persis.
+const edgeCanvas = document.createElement('canvas');
+edgeCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
+let edgeCanvasVisible = false;
+let _edgeRAF = null;
+
+function _mountEdgeCanvas() {
+  // Canvas ada di .leaflet-container langsung (bukan rotatePane),
+  // karena kita pakai latLngToContainerPoint — screen coords tidak perlu transform.
+  // z-index 400 = di atas tile (200) tapi di bawah marker (600)
+  const container = map.getContainer();
+  edgeCanvas.style.position = 'absolute';
+  edgeCanvas.style.zIndex = '400';
+  edgeCanvas.style.pointerEvents = 'none';
+  if (!container.contains(edgeCanvas)) container.appendChild(edgeCanvas);
+}
+map.whenReady(_mountEdgeCanvas);
+
+// Konversi latLng → piksel di canvas (koordinat relatif terhadap topLeft rotatePane)
+function _ll2px(lat, lng) {
+  // layerPoint = posisi dalam sistem koordinat Leaflet (relatif pixelOrigin)
+  const lp = map.latLngToLayerPoint([lat, lng]);
+  // rotatePane offset relatif terhadap mapPane
+  const rPos = map._getRotatePanePos ? map._getRotatePanePos() : new L.Point(0,0);
+  return { x: lp.x - rPos.x, y: lp.y - rPos.y };
+}
+
+// Semua edge data untuk digambar (array of {color,weight,ghost,lat1,lng1,lat2,lng2,siteAId,siteBId})
+let _edgeDrawData = [];
+let _activeDrawSiteIds = null; // Set siteId aktif; null = gambar semua
+
+function _resizeEdgeCanvas() {
+  const sz = map.getSize();
+  // Canvas harus lebih besar dari viewport agar garis di luar center tetap keliatan
+  // saat rotasi. Pakai diagonal viewport sebagai radius = selalu cukup.
+  const pad = Math.ceil(Math.sqrt(sz.x*sz.x + sz.y*sz.y));
+  const W = sz.x + pad * 2;
+  const H = sz.y + pad * 2;
+  edgeCanvas.width  = W;
+  edgeCanvas.height = H;
+  edgeCanvas.style.width  = W + 'px';
+  edgeCanvas.style.height = H + 'px';
+  // Offset agar canvas center = map center
+  edgeCanvas.style.left = (-pad) + 'px';
+  edgeCanvas.style.top  = (-pad) + 'px';
+  edgeCanvas._pad = pad;
+}
+
+function _drawEdges() {
+  _edgeRAF = null;
+  const ctx = edgeCanvas.getContext('2d');
+  if (!edgeCanvasVisible || !_edgeDrawData.length) {
+    if (edgeCanvas.width) ctx.clearRect(0, 0, edgeCanvas.width, edgeCanvas.height);
+    return;
+  }
+  _resizeEdgeCanvas();
+  const pad = edgeCanvas._pad || 0;
+  ctx.clearRect(0, 0, edgeCanvas.width, edgeCanvas.height);
+
+  // Canvas ada di luar rotatePane (append ke mapPane/container),
+  // jadi pakai containerPoint — koordinat piksel di layar, tidak terpengaruh rotasi.
+  // Ini zero-delay karena containerPoint dihitung live tanpa transform.
+
+  _edgeDrawData.forEach(e => {
+    // Kalau ada node aktif, hanya gambar garis yang terhubung ke node itu
+    if(_activeDrawSiteIds && !_activeDrawSiteIds.has(e.siteAId) && !_activeDrawSiteIds.has(e.siteBId)) return;
+
+    const pa = map.latLngToContainerPoint([e.lat1, e.lng1]);
+    const pb = map.latLngToContainerPoint([e.lat2, e.lng2]);
+
+    ctx.beginPath();
+    ctx.moveTo(pa.x + pad, pa.y + pad);
+    ctx.lineTo(pb.x + pad, pb.y + pad);
+    ctx.strokeStyle = e.color;
+    ctx.lineWidth = e.weight;
+    ctx.globalAlpha = e.ghost ? 0.55 : 0.85;
+    ctx.setLineDash(e.ghost ? [8, 5] : [8, 4, 2, 4]);
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+  ctx.setLineDash([]);
+}
+
+function scheduleEdgeDraw() {
+  if (_edgeRAF) return;
+  _edgeRAF = requestAnimationFrame(_drawEdges);
+}
+
+// Subscribe ke SEMUA map movement events — zero delay
+map.on('move zoom rotate zoomend moveend viewreset', scheduleEdgeDraw);
+map.on('zoomanim', () => { scheduleEdgeDraw(); });
+
+// Hitbox untuk klik garis — tetap pakai invisible polyline di Leaflet
+let edgeLayer = L.layerGroup(); // hanya hitbox, tidak ada visual
+
+let markerLayer=L.layerGroup().addTo(map);
+let linkLabelsLayer=L.layerGroup(); // tidak di-add ke map dulu
+let skeletonLayer=L.layerGroup().addTo(map); // skeleton hex saat loading per klien
+let activeSiteId=null, openLinkId=null;
+let sitesIndex={}, edgesIndex={};
+let allLayersData={};
+map.on('click', ()=>{ closeDropdownAll(); });
+let showLinks=false;
+
+function showSkeletonForClient(clntId){
+  skeletonLayer.clearLayers();
+  const color=clientColorMap[clntId]||'#00e5ff';
+  const bounds=map.getBounds();
+  const sw=bounds.getSouthWest(), ne=bounds.getNorthEast();
+  const latSpan=ne.lat-sw.lat, lngSpan=ne.lng-sw.lng;
+  // Tampilkan 6 hexagon skeleton tersebar di viewport
+  const positions=[
+    [sw.lat+latSpan*.25, sw.lng+lngSpan*.25],
+    [sw.lat+latSpan*.25, sw.lng+lngSpan*.65],
+    [sw.lat+latSpan*.5,  sw.lng+lngSpan*.45],
+    [sw.lat+latSpan*.65, sw.lng+lngSpan*.2 ],
+    [sw.lat+latSpan*.7,  sw.lng+lngSpan*.7 ],
+    [sw.lat+latSpan*.4,  sw.lng+lngSpan*.8 ],
+  ];
+  positions.forEach(([lat,lng])=>{
+    const icon=L.divIcon({
+      html:`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" class="hex-skeleton">
+        <polygon points="13,2 22,7.5 22,18.5 13,24 4,18.5 4,7.5"
+          fill="${color}" fill-opacity=".15"
+          stroke="${color}" stroke-width="1.5" stroke-dasharray="4 2.5" stroke-linejoin="round"/>
+      </svg>`,
+      className:'',iconSize:[26,26],iconAnchor:[13,13]
+    });
+    L.marker([lat,lng],{icon,interactive:false,zIndexOffset:-500}).addTo(skeletonLayer);
+  });
+}
+
+function clearSkeleton(){
+  skeletonLayer.clearLayers();
+}
+
+
+/* ── MAP ROTATE — menggunakan leaflet-rotate plugin ── */
+// Plugin sudah di-inject sebelum script ini.
+// map dibuat dengan rotate:true, touchRotate:true — dua jari otomatis rotate+zoom.
+// Marker, tooltip, popup semuanya dihandle plugin: posisinya dihitung ulang via
+// setBearing() sehingga tetap ngunci ke koordinat lat/lng yang benar.
+
+// Compass button: reset bearing ke 0
+document.getElementById('compassBtn').addEventListener('click', () => {
+  map.setBearing(0);
+});
+
+// Update jarum kompas setiap kali bearing berubah
+map.on('rotate', () => {
+  const bearing = map.getBearing();
+  const needle = document.getElementById('compassNeedle');
+  if (needle) needle.style.transform = `rotate(${bearing}deg)`;
+  const btn = document.getElementById('compassBtn');
+  if (btn) btn.classList.toggle('rotated', Math.abs(bearing) > 0.5);
+
+});
+
+// zoomanim handled by canvas scheduleEdgeDraw (subscribed above)
+
+
+// Palet warna fallback
+const CLIENT_COLORS=[
+  '#ffffff','#a78bfa','#22c55e','#f472b6','#38bdf8',
+  '#fb923c','#4ade80','#e879f9','#facc15','#94a3b8'
+];
+let clientColorMap={};
+
+function assignClientColor(name){
+  const n=(name||'').toUpperCase();
+  if(n.includes('TELEKOMUNIKASI SELULAR')||n.includes('TELKOMSEL')) return '#ff1a1a';
+  if(n.includes('XLSMART')) return '#1a8cff';
+  if(n.includes('INDOSAT')) return '#ffe600';
+  return null;
+}
+
+/* =======================================================
+   HELPERS
+/* ======================================================= */
+const M={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+function expStatus(d){
+  if(!d) return 'unknown';
+  const p=d.split('-'); if(p.length<3) return 'unknown';
+  const dt=new Date(+p[2],M[p[1]?.toUpperCase()]??0,+p[0]);
+  const diff=(dt-new Date())/86400000;
+  return diff<0?'expired':diff<180?'soon':'active';
+}
+function chipHtml(d){
+  const s=expStatus(d);
+  const label={active:'GRANTED',expired:'EXPIRED',soon:'SEGERA HABIS',unknown:'\u2014'}[s];
+  const cls={active:'chip-ok',expired:'chip-exp',soon:'chip-soon',unknown:''}[s];
+  return `<span class="chip ${cls}">${label}${d?' \u00B7 '+d:''}</span>`;
+}
+function fmtFreq(v){ return v!=null?v+' MHz':'\u2014'; }
+
+function esc(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function dmsToDecimal(deg,min,sec,dir){
@@ -1089,7 +1223,11 @@ function stnNorm(s){
   if(!s) return '';
   const parts=s.split('_');
   const seen=new Set();
-  const deduped=parts.filter(p=>{ const k=p.toLowerCase().replace(/\s+/g,''); if(seen.has(k)) return false; seen.add(k); return true; });
+  const deduped=parts.filter(p=>{
+    const k=p.toLowerCase().replace(/\s+/g,'');
+    if(seen.has(k)) return false;
+    seen.add(k); return true;
+  });
   return addrNorm(deduped.join(' '));
 }
 
@@ -1098,7 +1236,8 @@ function addrWordOverlap(a,b){
   const wa=new Set(addrNorm(a).split(' ').filter(w=>w.length>3));
   const wb=new Set(addrNorm(b).split(' ').filter(w=>w.length>3));
   if(!wa.size||!wb.size) return 0;
-  let overlap=0; wa.forEach(w=>{ if(wb.has(w)) overlap++; });
+  let overlap=0;
+  wa.forEach(w=>{ if(wb.has(w)) overlap++; });
   return overlap/Math.min(wa.size,wb.size);
 }
 
@@ -1108,17 +1247,30 @@ function stnWordOverlap(a,b){
   const wb=new Set(stnNorm(b).split(' ').filter(w=>w.length>2));
   if(!wa.size||!wb.size) return 0;
   let overlap=0;
-  wa.forEach(w=>{ if(wb.has(w)){ overlap++; } else { for(const wb2 of wb){ if(wb2.startsWith(w)||w.startsWith(wb2)){ overlap+=0.7; break; } } } });
+  wa.forEach(w=>{
+    if(wb.has(w)){ overlap++; }
+    else{ for(const wb2 of wb){ if(wb2.startsWith(w)||w.startsWith(wb2)){ overlap+=0.7; break; } } }
+  });
   return overlap/Math.min(wa.size,wb.size);
 }
 
 function siteHasSimilarLawan(site,lawan){
   if(!lawan) return false;
   const la=stnNorm(lawan);
-  return site.isr.some(r=>{ if(!r.stasiun_lawan) return false; const lb=stnNorm(r.stasiun_lawan); if(la===lb) return true; return stnWordOverlap(lawan,r.stasiun_lawan)>=0.6; });
+  return site.isr.some(r=>{
+    if(!r.stasiun_lawan) return false;
+    const lb=stnNorm(r.stasiun_lawan);
+    if(la===lb) return true;
+    return stnWordOverlap(lawan,r.stasiun_lawan)>=0.6;
+  });
 }
 
+/* =======================================================
+   TOWER CLUSTERING
+/* ======================================================= */
 const MAX_DIST=100;
+// Jarak maksimum (meter) untuk menggabungkan site dari klien berbeda jadi 1 node fisik
+const CROSS_CLUSTER_DIST=20;
 
 function clusterISRtoSites(rows){
   const sites=[];
@@ -1131,7 +1283,7 @@ function clusterISRtoSites(rows){
       const dist=haversineM(lat,lng,site.lat,site.lng);
       if(dist>MAX_DIST) continue;
       let score=0;
-      if(dist<20){ score=100; }
+      if(dist<20) score=100;
       else{
         const nsBest=site.isr.length?Math.max(...site.isr.map(r=>nameSimilarity(isr.stn_name,r.stn_name))):0;
         if(nsBest>=0.7) score=Math.max(score,60+Math.round(nsBest*20));
@@ -1148,9 +1300,11 @@ function clusterISRtoSites(rows){
       best.lat=(best.lat*(n-1)+lat)/n;
       best.lng=(best.lng*(n-1)+lng)/n;
     } else {
-      sites.push({ id:'S'+sites.length, lat, lng,
+      sites.push({
+        id:'S'+sites.length,lat,lng,
         label:isr.stn_addr?isr.stn_addr.replace(/,.*$/,'').trim().substring(0,30):(isr.stn_name||'Site'),
-        isr:[isr], ghost:false, marker:null, link_count:0 });
+        isr:[isr],ghost:false,marker:null
+      });
     }
   });
 
@@ -1163,23 +1317,37 @@ function clusterISRtoSites(rows){
     if(nearSite) return;
     if(isr.stasiun_lawan){
       const lawanNorm=stnNorm(isr.stasiun_lawan);
-      const nameMatch=sites.find(t=>{ if(t.isr.some(r=>r.id===isr.id)) return false; return t.isr.some(r=>{ if(!r.stn_name) return false; if(stnNorm(r.stn_name)===lawanNorm) return true; return stnWordOverlap(r.stn_name,isr.stasiun_lawan)>=0.6; }); });
+      const nameMatch=sites.find(t=>{
+        if(t.isr.some(r=>r.id===isr.id)) return false;
+        return t.isr.some(r=>{
+          if(!r.stn_name) return false;
+          if(stnNorm(r.stn_name)===lawanNorm) return true;
+          return stnWordOverlap(r.stn_name,isr.stasiun_lawan)>=0.6;
+        });
+      });
       if(nameMatch) return;
     }
     const existGhost=ghostSites.find(t=>haversineM(toLat,toLng,t.lat,t.lng)<MAX_DIST);
     if(existGhost){
       if(!existGhost.isr.some(r=>r._ghost_ref_simf===isr.no_simf&&r._ghost_ref_lawan===isr.stasiun_lawan))
-        existGhost.isr.push({stn_name:isr.stasiun_lawan,_is_ghost:true,_ghost_ref_simf:isr.no_simf,_ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr});
+        existGhost.isr.push({stn_name:isr.stasiun_lawan,_is_ghost:true,_ghost_ref_simf:isr.no_simf,
+          _ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr});
       return;
     }
-    ghostSites.push({ id:'G'+ghostSites.length, lat:toLat, lng:toLng,
+    ghostSites.push({
+      id:'G'+ghostSites.length,lat:toLat,lng:toLng,
       label:isr.stasiun_lawan||'Ghost Site',
-      isr:[{stn_name:isr.stasiun_lawan,_is_ghost:true,_ghost_ref_simf:isr.no_simf,_ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr}],
-      ghost:true, marker:null, link_count:0 });
+      isr:[{stn_name:isr.stasiun_lawan,_is_ghost:true,
+        _ghost_ref_simf:isr.no_simf,_ghost_ref_lawan:isr.stasiun_lawan,parent_isr:isr}],
+      ghost:true,marker:null
+    });
   });
   return [...sites,...ghostSites];
 }
 
+/* =======================================================
+   MWLINK PAIRING
+/* ======================================================= */
 function buildMWLinks(sites,rows){
   const edges=new Map();
   const isrToSite=new Map();
@@ -1209,7 +1377,7 @@ function buildMWLinks(sites,rows){
     const isInferred=method==='ghost_coord'||method==='coord_real'||method==='name_fallback';
     if(!edges.has(edgeKey)) edges.set(edgeKey,{id:edgeKey,siteA:sA.id<sB.id?sA:sB,siteB:sA.id<sB.id?sB:sA,mwlinks:[],ghost:sB.ghost||isInferred,line:null});
     const e=edges.get(edgeKey);
-    if(!e.mwlinks.find(m=>m.link_id==isr.link_id&&isr.link_id!==null)){
+    if(!e.mwlinks.find(m=>m.link_id==isr.link_id&&m.link_id!==null)){
       e.mwlinks.push({link_id:isr.link_id,freq_tx:isr.freq,freq_rx:isr.freq_pair,
         no_simf:isr.no_simf,appl_id:isr.appl_id,validity:isr.validity_date,
         circuit_len:isr.circuit_len,azim:isr.azim,eq_mfr:isr.eq_mfr,eq_mdl:isr.eq_mdl,
@@ -1221,841 +1389,1200 @@ function buildMWLinks(sites,rows){
     }
   });
   const edgeArr=[...edges.values()];
+  // hitung linkCount per site (jumlah MW link unik yang melibatkan site ini)
   edgeArr.forEach(e=>{
     const cnt=e.mwlinks.length;
-    e.siteA.link_count=(e.siteA.link_count||0)+cnt;
-    e.siteB.link_count=(e.siteB.link_count||0)+cnt;
+    e.siteA.linkCount=(e.siteA.linkCount||0)+cnt;
+    e.siteB.linkCount=(e.siteB.linkCount||0)+cnt;
   });
   return edgeArr;
 }
 
-async function fetchLinkDetail(isrId){
-  const r = await fetch(`api/link_detail.php?isr_id=${isrId}`);
-  const d = await r.json();
-  if(!d.success) throw new Error(d.error||'Gagal load detail');
-  return d.data;
-}
-
-/* ══════════════════════════════════════════════
-   DROPDOWN
-   ══════════════════════════════════════════════ */
-function toggleDropdown(){
-  if(isMobile()) return;
-  S.dropdownOpen = !S.dropdownOpen;
-  document.getElementById('msDropdown').classList.toggle('open', S.dropdownOpen);
-  document.getElementById('chipCaret').classList.toggle('open', S.dropdownOpen);
-  document.getElementById('msTrigger').classList.toggle('open', S.dropdownOpen);
-}
-
-document.addEventListener('click', e => {
-  if(!document.getElementById('floatSelector').contains(e.target)){
-    S.dropdownOpen = false;
-    document.getElementById('msDropdown').classList.remove('open');
-    document.getElementById('chipCaret').classList.remove('open');
-    document.getElementById('msTrigger').classList.remove('open');
+/* =======================================================
+   ICONS \u2014 warna per klien
+/* ======================================================= */
+function mkSiteIcon(count,ghost,active,color){
+  color=color||'#00e5ff';
+  if(ghost){
+    // Ghost: hexagon outline dashed
+    const op=active?0.25:0.12;
+    const sw=active?2:1.5;
+    return L.divIcon({
+      html:`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="${color}" fill-opacity="${op}" stroke="${color}" stroke-width="${sw}" stroke-dasharray="4 2.5" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="2.5" fill="${color}" fill-opacity=".6"/>
+      </svg>`,
+      className:'',iconSize:[24,24],iconAnchor:[12,12],tooltipAnchor:[13,0]
+    });
   }
-});
-
-function renderDropdown(){
-  const dd = document.getElementById('msDropdown');
-  dd.innerHTML = S.clients.map((c,i) => {
-    const col = clientColor(i);
-    const sel = S.selectedIds.has(c.clnt_id);
-    const ld = S.allLayersData[c.clnt_id];
-    const isrN = ld ? (ld.sites||[]).length : (c.total_isr||'—');
-    const mwN  = ld ? (ld.edges||[]).length : (c.total_link||'—');
-    return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.clnt_id})" style="--c:${col}">
-      <div class="ms-check"><span class="ms-check-mark">✓</span></div>
-      <div class="ms-dot" style="background:${col}"></div>
-      <span class="ms-name">${c.clnt_name}</span>
-      <div class="ms-stats">
-        <span class="ms-stat-chip">${isrN}ISR</span>
-        <span class="ms-stat-chip">${mwN}MW</span>
-      </div>
-    </div>`;
-  }).join('');
+  const label=count>99?'99+':String(count);
+  const sz=count>9?36:count>3?30:26;
+  const fs=count>99?7:count>9?9:11;
+  const r=sz/2;
+  const ir=r-5; // inner radius for pin shape
+  // Hexagon pin shape
+  const pts6=(R)=>{
+    let pts='';
+    for(let i=0;i<6;i++){
+      const a=(i*60-90)*Math.PI/180;
+      pts+=(r+R*Math.cos(a)).toFixed(2)+','+(r+R*Math.sin(a)).toFixed(2)+' ';
+    }
+    return pts.trim();
+  };
+  const glowOp=active?0.4:0.15;
+  const fillOp=active?0.95:0.88;
+  const shadow=active?`<polygon points="${pts6(r-0.5)}" fill="${color}" fill-opacity="0.18" stroke="none"/>`:'' ;
+  return L.divIcon({
+    html:`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">
+      ${shadow}
+      <polygon points="${pts6(r-1.5)}" fill="${color}" fill-opacity="${glowOp}" stroke="${color}" stroke-width="${active?2:1.2}" stroke-linejoin="round"/>
+      <polygon points="${pts6(ir)}" fill="${color}" fill-opacity="${fillOp}" stroke="none"/>
+      <text x="${r}" y="${r+fs*0.35}" text-anchor="middle" font-size="${fs}" fill="#000" font-weight="800" font-family="monospace" letter-spacing="-0.5">${label}</text>
+    </svg>`,
+    className:'',iconSize:[sz,sz],iconAnchor:[r,r],tooltipAnchor:[r+2,0]
+  });
 }
 
-function renderChips(){
-  const area = document.getElementById('chipsArea');
-  const sel = S.clients.filter(c => S.selectedIds.has(c.clnt_id));
-  if(sel.length === 0){
-    area.innerHTML = `<span style="color:var(--muted);font-size:11px">Pilih klien untuk melihat…</span>`;
-    return;
+function mkPieIcon(count,colors,active){
+  const label=count>99?'99+':String(count);
+  const sz=count>9?36:count>3?30:26;
+  const R=sz/2, fs=count>99?7:count>9?9:11;
+  const n=colors.length;
+  // helper: hexagon points at radius r centered at R,R
+  const hex=(r)=>{let p='';for(let i=0;i<6;i++){const a=(i*60-90)*Math.PI/180;p+=(R+r*Math.cos(a)).toFixed(2)+','+(R+r*Math.sin(a)).toFixed(2)+' ';}return p.trim();};
+  const outerR=R-1.5, innerR=Math.max(R-6,5);
+  let paths='';
+  if(n===1){
+    paths=`<polygon points="${hex(outerR)}" fill="${colors[0]}" fill-opacity="${active?.4:.18}" stroke="${colors[0]}" stroke-width="${active?2:1.2}" stroke-linejoin="round"/>`;
+    paths+=`<polygon points="${hex(innerR)}" fill="${colors[0]}" fill-opacity="${active?.92:.85}" stroke="none"/>`;
+  } else {
+    // pie slices clipped to hexagon via clipPath
+    const cid='cp'+Math.random().toString(36).slice(2,7);
+    paths+=`<defs><clipPath id="${cid}"><polygon points="${hex(outerR)}"/></clipPath></defs>`;
+    const slice=2*Math.PI/n;
+    for(let i=0;i<n;i++){
+      const a1=i*slice-Math.PI/2, a2=(i+1)*slice-Math.PI/2;
+      const x1=R+outerR*Math.cos(a1), y1=R+outerR*Math.sin(a1);
+      const x2=R+outerR*Math.cos(a2), y2=R+outerR*Math.sin(a2);
+      const large=slice>Math.PI?1:0;
+      paths+=`<path d="M${R},${R} L${x1.toFixed(2)},${y1.toFixed(2)} A${outerR},${outerR} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${colors[i]}" clip-path="url(#${cid})"/>`;
+    }
+    paths+=`<polygon points="${hex(outerR)}" fill="none" stroke="#00000033" stroke-width="0.5" stroke-linejoin="round"/>`;
+    paths+=`<polygon points="${hex(innerR)}" fill="#141920" stroke="none"/>`;
   }
-  area.innerHTML = sel.map(c => {
-    const col = clientColor(S.clients.indexOf(c));
-    return `<span class="chip" style="color:${col};border-color:${col}">${c.clnt_name}</span>`;
-  }).join('');
+  const textFill=n===1?'#000':'#fff';
+  const html=`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${paths}<text x="${R}" y="${R+fs*0.35}" text-anchor="middle" font-size="${fs}" fill="${textFill}" font-weight="800" font-family="monospace" letter-spacing="-0.5">${label}</text></svg>`;
+  return L.divIcon({html,className:'',iconSize:[sz,sz],iconAnchor:[R,R],tooltipAnchor:[R+2,0]});
 }
 
-function updateFooterStats(){
-  let totalIsr=0, totalMw=0, totalCl=0;
-  S.clients.forEach(c => {
-    if(S.selectedIds.has(c.clnt_id)){
-      totalCl++;
-      const ld = S.allLayersData[c.clnt_id];
-      if(ld){
-        totalIsr += (ld.sites||[]).length;
-        totalMw  += (ld.edges||[]).length;
-      }
+function applySharedSiteIcons(activeIds){
+  // Kumpulkan semua site real dari klien aktif
+  const allSites=[];
+  activeIds.forEach(clntId=>{
+    const data=allLayersData[clntId];
+    if(!data) return;
+    data.sites.forEach(site=>{
+      if(!site.marker||site.ghost) return;
+      allSites.push({clntId,site});
+    });
+  });
+  // Clustering greedy berdasarkan haversine < CROSS_CLUSTER_DIST (tower fisik yang sama)
+  const clusters=[];
+  allSites.forEach(entry=>{
+    let target=null;
+    for(const c of clusters){
+      if(haversineM(entry.site.lat,entry.site.lng,c.lat,c.lng)<CROSS_CLUSTER_DIST){ target=c; break; }
+    }
+    if(target){
+      target.entries.push(entry);
+      const n=target.entries.length;
+      target.lat=(target.lat*(n-1)+entry.site.lat)/n;
+      target.lng=(target.lng*(n-1)+entry.site.lng)/n;
+    } else {
+      clusters.push({lat:entry.site.lat,lng:entry.site.lng,entries:[entry]});
     }
   });
-  const fi = document.getElementById('footIsr');
-  const fl = document.getElementById('footLink');
-  const fk = document.getElementById('footKlien');
-  if(fi) fi.textContent = totalIsr||'—';
-  if(fl) fl.textContent = totalMw||'—';
-  if(fk) fk.textContent = totalCl||'—';
-}
-
-/* ══════════════════════════════════════════════
-   HEXAGON MARKER
-   ══════════════════════════════════════════════ */
-function hexPath(r){
-  const pts = [];
-  for(let i=0;i<6;i++){
-    const a = Math.PI/180*(60*i-30);
-    pts.push([r+r*Math.cos(a), r+r*Math.sin(a)]);
-  }
-  return 'M'+pts.map(p=>p.join(',')).join('L')+'Z';
-}
-
-function makeHexIcon(color, count, size=26){
-  const r = size/2;
-  const hex = hexPath(r);
-  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-    <path d="${hex}" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="1.5"/>
-    <path d="${hex}" fill="none" stroke="${color}" stroke-width=".5" opacity=".35"/>
-    ${count>1?`<text x="${r}" y="${r+3.5}" text-anchor="middle" font-size="8.5" font-family="Space Mono,monospace" fill="${color}" font-weight="700">${count>99?'99+':count}</text>`:''}
-  </svg>`;
-  return L.divIcon({
-    html:svg,
-    className:'',
-    iconSize:[size,size],
-    iconAnchor:[size/2,size/2],
-    popupAnchor:[0,-size/2]
+  clusters.forEach(c=>{
+    const entries=c.entries;
+    if(entries.length<2) return;
+    const colors=[...new Set(entries.map(e=>clientColorMap[e.clntId]||'#ffffff'))];
+    const totalLinks=entries.reduce((s,e)=>s+(e.site.linkCount||e.site.isr.length),0);
+    const isActive=entries.some(e=>e.site.id===activeSiteId);
+    const icon=mkPieIcon(totalLinks,colors,isActive);
+    entries[0].site.marker.setIcon(icon);
+    entries[0].site._sharedWith=entries.slice(1).map(e=>e.site.id);
+    for(let i=1;i<entries.length;i++){
+      if(markerLayer.hasLayer(entries[i].site.marker))
+        markerLayer.removeLayer(entries[i].site.marker);
+      entries[i].site._hiddenByShared=entries[0].site.id;
+    }
   });
 }
 
-/* ══════════════════════════════════════════════
-   RENDER MAP LAYERS
-   ══════════════════════════════════════════════ */
-function clearClientLayers(cid){
-  if(S.hexLayers[cid]){map.removeLayer(S.hexLayers[cid]);delete S.hexLayers[cid]}
-  if(S.edgeLayers[cid]){map.removeLayer(S.edgeLayers[cid]);delete S.edgeLayers[cid]}
+
+/* ======================================================= */
+let currentSites=[], currentEdges=[];
+
+function renderAllVisible(skipFit=false){
+  // Reset referensi marker/line di semua cache sebelum clear
+  Object.values(allLayersData).forEach(data=>{
+    data.sites.forEach(s=>{ s.marker=null; });
+    data.edges.forEach(e=>{ e.line=null; e.hitbox=null; e.labelMarker=null; });
+  });
+  mapLayers.clearLayers();
+  edgeLayer.clearLayers();
+  _edgeDrawData = [];
+  markerLayer.clearLayers();
+  linkLabelsLayer.clearLayers();
+  skeletonLayer.clearLayers();
+  sitesIndex={}; edgesIndex={};
+  currentSites=[]; currentEdges=[];
+
+  const overlay=document.getElementById('stateOverlay');
+  const activeIds=[...selectedIds];
+
+  if(!activeIds.length){
+    overlay.style.display='flex';
+    overlay.innerHTML='<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Pilih klien untuk melihat peta</span>';
+    updateFooter();
+    return;
+  }
+  overlay.style.display='none';
+
+  const bounds=[];
+
+  activeIds.forEach(clntId=>{
+    const data=allLayersData[clntId];
+    if(!data) return;
+    const color=clientColorMap[clntId]||'#00e5ff';
+
+    data.sites.forEach(site=>{
+      const m=L.marker([site.lat,site.lng],{icon:mkSiteIcon(site.linkCount||site.isr.length,site.ghost,false,color)});
+      const tipText=site.ghost
+        ?`<b>${esc(site.label)}</b><br><span style="color:${color}">Ghost site</span>`
+        :`<b>${esc(site.label)}</b><br>${site.linkCount||site.isr.length} MW Link`;
+      m.bindTooltip(tipText,{className:'lf-tooltip',direction:'right',offset:[12,0]});
+      m.on('click',(ev)=>{ L.DomEvent.stopPropagation(ev); selectSite(site.id); });
+      site.marker=m; sitesIndex[site.id]=site;
+      bounds.push([site.lat,site.lng]);
+    });
+
+    data.edges.forEach(e=>{
+      const a=e.siteA,b=e.siteB;
+      const lineColor=e.ghost?color+'88':color+'cc';
+      // Simpan data untuk canvas draw
+      _edgeDrawData.push({
+        color:lineColor,weight:e.ghost?2:3,ghost:e.ghost,
+        lat1:a.lat,lng1:a.lng,lat2:b.lat,lng2:b.lng,
+        siteAId:a.id,siteBId:b.id
+      });
+      // Hitbox invisible untuk klik — ringan, tidak ada visual
+      const hitbox=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{
+        color:'transparent',weight:20,opacity:0.001,
+        interactive:true,bubblingMouseEvents:false
+      }).addTo(edgeLayer);
+      hitbox.bindTooltip(`<b>${e.mwlinks.length} MWLink</b><br>${esc(a.label)} \u2194 ${esc(b.label)}`,
+        {className:'lf-tooltip',direction:'top',sticky:true});
+      const onLineClick=(ev)=>{ L.DomEvent.stopPropagation(ev); selectSite(a.id); };
+      hitbox.on('click', onLineClick);
+      e.line=null; e.hitbox=hitbox; edgesIndex[e.id]=e;
+
+      // Label angka di tengah garis
+      const midLat=(a.lat+b.lat)/2, midLng=(a.lng+b.lng)/2;
+      const n=e.mwlinks.length;
+      const lbl=L.marker([midLat,midLng],{
+        icon:L.divIcon({
+          html:`<div class="link-count-label">${n}</div>`,
+          className:'',iconSize:[20,16],iconAnchor:[10,8]
+        }),
+        interactive:false,zIndexOffset:-100
+      }).addTo(linkLabelsLayer);
+      e.labelMarker=lbl;
+    });
+
+    currentSites.push(...data.sites);
+    currentEdges.push(...data.edges);
+  });
+
+  if(bounds.length&&!skipFit) map.fitBounds(bounds,{padding:[50,50],maxZoom:14});
+  refreshMarkers();
+  applySharedSiteIcons([...selectedIds]);
+  requestAnimationFrame(()=>updateLinkLabels(null));
+  // Trigger canvas draw sesuai state toggle saat ini
+  edgeCanvasVisible = showLinks;
+  scheduleEdgeDraw();
+  updateFooter();
 }
 
-function renderClientLayer(cid){
-  clearClientLayers(cid);
-  const ld = S.allLayersData[cid];
-  if(!ld) return;
-  const ci = S.clients.findIndex(c=>c.clnt_id===cid);
-  const color = clientColor(ci<0?0:ci);
+// Viewport culling \u2014 hanya render marker dalam bounds + sedikit buffer
+function refreshMarkers(){
+  if(!currentSites.length) return;
+  const bounds=map.getBounds().pad(0.15); // 15% buffer di luar viewport
+  markerLayer.clearLayers();
+  currentSites.forEach(site=>{
+    if(!site.marker) return;
+    if(bounds.contains([site.lat,site.lng])){
+      // update icon kalau site ini sedang aktif
+      const clntId=findClientOfSite(site.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      site.marker.setIcon(mkSiteIcon(site.linkCount||site.isr.length,site.ghost,site.id===activeSiteId,color));
+      markerLayer.addLayer(site.marker);
+    }
+  });
+  applySharedSiteIcons([...selectedIds]);
+}
+map.on('moveend zoomend', refreshMarkers);
 
-  // Edge layer
-  const edgeGroup = L.layerGroup();
-  if(S.showLinks && ld.edges){
-    ld.edges.forEach(edge => {
-      if(edge.from_lat && edge.from_lng && edge.to_lat && edge.to_lng){
-        L.polyline([
-          [parseFloat(edge.from_lat), parseFloat(edge.from_lng)],
-          [parseFloat(edge.to_lat),   parseFloat(edge.to_lng)]
-        ],{color, weight:1.5, opacity:.7, dashArray:'4,3'}).addTo(edgeGroup);
+function updateLegend(){
+  const activeIds=[...selectedIds];
+  const legendInner=document.getElementById('legendInner');
+  if(legendInner){
+    legendInner.innerHTML=activeIds.map(id=>{
+      const c=allClients.find(x=>x.clnt_id==id);
+      const col=clientColorMap[id]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+      return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div><span>${esc(name)}</span></div>`;
+    }).join('');
+  }
+  const mobWrap=document.getElementById('mobDrawerLegend');
+  const mobInner=document.getElementById('mobLegendItems');
+  if(mobWrap&&mobInner){
+    mobWrap.style.display=activeIds.length?'':'none';
+    mobInner.innerHTML=activeIds.map(id=>{
+      const c=allClients.find(x=>x.clnt_id==id);
+      const col=clientColorMap[id]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+      return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div>${esc(name)}</div>`;
+    }).join('');
+  }
+}
+
+function updateLinkVisibility(){
+  // edgeLayer show/hide sudah ditangani toggle handler
+  // fungsi ini hanya update hitbox interactivity
+  currentEdges.forEach(e=>{
+    if(e.hitbox&&e.hitbox._path){
+      e.hitbox._path.style.pointerEvents=showLinks?'':'none';
+    }
+  });
+}
+
+function updateLinkLabels(activeSiteId){
+  currentEdges.forEach(e=>{
+    if(!e.labelMarker) return;
+    const isConn=activeSiteId&&(e.siteA.id===activeSiteId||e.siteB.id===activeSiteId);
+    const noSelection=!activeSiteId;
+    const el=e.labelMarker.getElement()?.querySelector('.link-count-label');
+    if(el){
+      // toggle off + node dipilih: label terhubung tetap muncul, lainnya sembunyi
+      // toggle off + tidak ada node: semua sembunyi
+      // toggle on: semua muncul (connected terang, lainnya redup)
+      let op=0;
+      if(showLinks) op=noSelection||isConn?1:.25;
+      else if(isConn) op=1; // toggle off tapi node terhubung \u2192 tampil
+      el.style.opacity=op;
+      el.style.fontWeight=isConn?'700':'400';
+      el.style.borderColor=isConn?'currentColor':'rgba(255,255,255,.2)';
+    }
+  });
+}
+
+/* =======================================================
+   SELECT SITE & PANEL
+/* ======================================================= */
+function selectSite(siteId,fromGoto=false){
+  if(typeof mobCloseSheet==='function') mobCloseSheet();
+  currentSites.forEach(s=>{
+    if(s.marker){
+      const clntId=findClientOfSite(s.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,s.id===siteId,color));
+    }
+  });
+  activeSiteId=siteId; openLinkId=null;
+  const site=sitesIndex[siteId];
+  if(!site){ closePanel(); return; }
+
+  // Kumpulkan semua siteId yang share koordinat ini (multi-klien)
+  const sharedSiteIds=new Set([siteId]);
+  if(!site.ghost){
+    findAllClientsOfCoord(site).forEach(({site:cs})=>sharedSiteIds.add(cs.id));
+  }
+
+  // Kumpulkan semua edge dari semua klien yang share koordinat
+  const allEdgesHere=[];
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId)) continue;
+    data.edges.forEach(e=>{
+      if(sharedSiteIds.has(e.siteA.id)||sharedSiteIds.has(e.siteB.id)) allEdgesHere.push({e,clntId:+clntId});
+    });
+  }
+  const connectedEdgeIds=new Set(allEdgesHere.map(({e})=>e.id));
+
+  currentEdges.forEach(e=>{
+    const isConnected=connectedEdgeIds.has(e.id);
+    if(e.line){
+      const clntId=findClientOfSite(e.siteA.id)||findClientOfSite(e.siteB.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      const opConn=1;
+      const opOther=showLinks?0.15:0;
+      e.line.setStyle({
+        color:e.ghost?color+'88':color+'cc',
+        opacity:isConnected?opConn:opOther,
+        weight:isConnected?4:e.ghost?2:3,
+        dashArray:e.ghost?'8 5':'8 4 2 4'
+      });
+    }
+  });
+  // pastikan edgeLayer & linkLabelsLayer tampil saat node dipilih, walau toggle off
+  if(!map.hasLayer(edgeLayer)) edgeLayer.addTo(map);
+  // Hanya gambar garis yang terhubung ke node ini
+  _activeDrawSiteIds = sharedSiteIds;
+  edgeCanvasVisible=true; scheduleEdgeDraw();
+  if(!map.hasLayer(linkLabelsLayer)) linkLabelsLayer.addTo(map);
+  updateLinkLabels(siteId);
+  if(fromGoto) map.panTo([site.lat,site.lng],{animate:true});
+  // Selalu re-render panel body agar data terbaru tampil
+  document.getElementById('panelBody').innerHTML='';
+  showSitePanel(site);
+}
+
+function findClientOfSite(siteId){
+  // cari di klien yang sedang dipilih dulu
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId)) continue;
+    if(data.sites.find(s=>s.id===siteId)) return +clntId;
+  }
+  // fallback ke semua cache
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(data.sites.find(s=>s.id===siteId)) return +clntId;
+  }
+  return null;
+}
+
+// Kembalikan semua klien yang punya site di tower fisik yang sama (jarak < CROSS_CLUSTER_DIST)
+function findAllClientsOfCoord(site){
+  const result=[];
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId)) continue;
+    const match=data.sites.find(s=>!s.ghost&&haversineM(s.lat,s.lng,site.lat,site.lng)<CROSS_CLUSTER_DIST);
+    if(match) result.push({clntId:+clntId,site:match});
+  }
+  return result;
+}
+
+function showSitePanel(site){
+  const clntId=findClientOfSite(site.id);
+  const siteColor=clientColorMap[clntId]||'#00e5ff';
+  document.getElementById('panelTitle').textContent=site.label;
+  document.getElementById('panelBreadcrumb').style.display='none';
+  document.getElementById('detailPanel').classList.add('open');
+  document.querySelector('.app').classList.add('panel-open');
+  document.getElementById('panelBody').scrollTop=0;
+
+  if(site.ghost){
+    document.getElementById('panelTabs').style.display='none';
+    const refs=site.isr.filter(r=>r._is_ghost);
+    document.getElementById('panelSub').textContent=`Ghost site \u00B7 ${refs.length} link masuk`;
+    document.getElementById('panelBody').innerHTML=`
+      <p style="color:var(--muted);font-size:12px;margin-bottom:12px">
+        Koordinat dari kolom <code style="color:var(--accent3)">to_lat/to_long</code> \u2014 site ini tidak ada di database klien ini.
+      </p>
+      ${refs.map(r=>{
+        const p=r.parent_isr;
+        return `<div class="lawan-group">
+          <div class="lawan-header-static">
+            <div class="lawan-dot" style="background:${siteColor}"></div>
+            <div class="lawan-name">${esc(p?.stn_name)||'\u2014'}</div>
+            <span class="lawan-count">Link ID: ${esc(p?.link_id)||'\u2014'}</span>
+          </div>
+          <div class="lawan-links">
+            <div class="link-row">
+              <div class="isr-pair-grid">
+                <div class="isr-half">
+                  <div class="isr-half-label">ISR lawan (sumber)</div>
+                  <div class="isr-half-stn">${esc(p?.stn_name)||'\u2014'}</div>
+                  <div class="isr-half-simf">${esc(p?.no_simf)||'\u2014'}</div>
+                  <div class="isr-half-freq"><span class="pill-tx">TX</span> ${fmtFreq(p?.freq)}</div>
+                </div>
+                <div class="isr-half isr-half-ghost">
+                  <div class="isr-half-label">ISR ini (ghost)</div>
+                  <div class="isr-half-stn" style="color:var(--muted)">\u2014</div>
+                  <div class="isr-half-freq" style="color:var(--muted)">Tidak ada di DB</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}`;
+    requestAnimationFrame(()=>{ updatePanelHeight(); setTimeout(updatePanelHeight,300); });
+    return;
+  }
+
+  // Kumpulkan semua klien yang share koordinat node ini
+  const sharedClients=findAllClientsOfCoord(site);
+  // Jika hanya 1 klien, sembunyikan tab
+  const showTabs=sharedClients.length>1;
+  const tabsEl=document.getElementById('panelTabs');
+  tabsEl.style.display=showTabs?'flex':'none';
+
+  // Hitung total semua klien
+  let totalEdges=0,totalLinks=0;
+  sharedClients.forEach(({clntId:cid,site:cs})=>{
+    const edges=currentEdges.filter(e=>(e.siteA.id===cs.id||e.siteB.id===cs.id));
+    totalEdges+=edges.length;
+    totalLinks+=edges.reduce((s,e)=>s+e.mwlinks.length,0);
+  });
+  document.getElementById('panelSub').textContent=`${totalEdges} node lawan \u00B7 ${totalLinks} MW link`;
+
+  // Build tab headers
+  if(showTabs){
+    tabsEl.innerHTML=sharedClients.map(({clntId:cid},ti)=>{
+      const c=allClients.find(x=>x.clnt_id==cid);
+      const col=clientColorMap[cid]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,3).join(' '):cid;
+      return `<div class="panel-tab${ti===0?' active':''}" id="ptab-${cid}"
+        style="--tab-color:${col}"
+        onclick="switchPanelTab(${cid})">
+        <span class="panel-tab-dot"></span>${esc(name)}
+      </div>`;
+    }).join('');
+  }
+
+  // Build content per klien
+  const bodyEl=document.getElementById('panelBody');
+  bodyEl.innerHTML=sharedClients.map(({clntId:cid,site:cs},ti)=>{
+    const col=clientColorMap[cid]||'#00e5ff';
+    const myEdges=allLayersData[cid]
+      ? allLayersData[cid].edges.filter(e=>e.siteA.id===cs.id||e.siteB.id===cs.id)
+      : currentEdges.filter(e=>e.siteA.id===cs.id||e.siteB.id===cs.id);
+
+    const groupsHtml=myEdges.map((e,ei)=>{
+      const partner=e.siteA.id===cs.id?e.siteB:e.siteA;
+      const partnerClntId=findClientOfSite(partner.id);
+      const partnerColor=clientColorMap[partnerClntId]||col;
+      const gid=`pg-${cid}-${ei}`;
+
+      const linksHtml=e.mwlinks.map((mw,idx)=>{
+        const mid=`${e.id}_${idx}_${cid}`.replace(/\|/g,'__');
+        const safeEid=e.id.replace(/\|/g,'__');
+
+        // mw.* berasal dari ISR salah satu sisi (_src_site_id). Tentukan sisi mana
+        // itu, lalu cari data sisi lain (otherIsr) agar "asal"/"lawan" sesuai cs.
+        const srcSite=mw._src_site_id===cs.id?cs:partner;
+        const otherSite=srcSite===cs?partner:cs;
+        const otherIsr=otherSite.isr.find(r=>r.link_id==mw.link_id)||
+                       otherSite.isr.find(r=>r._is_ghost&&r.parent_isr?.link_id==mw.link_id);
+
+        const srcData={
+          simf:mw.no_simf||'\u2014',
+          freqTx:fmtFreq(mw.freq_tx),
+          freqRx:fmtFreq(mw.freq_rx),
+          stn:mw.stn_name||srcSite.label
+        };
+        const otherData=(otherIsr&&!otherIsr._is_ghost)?{
+          simf:otherIsr.no_simf||'\u2014',
+          freqTx:fmtFreq(otherIsr.freq),
+          freqRx:fmtFreq(otherIsr.freq_pair),
+          stn:otherIsr.stn_name||otherSite.label
+        }:{
+          simf:mw.stasiun_lawan||'\u2014',
+          freqTx:fmtFreq(mw.freq_rx),
+          freqRx:fmtFreq(mw.freq_tx),
+          stn:otherSite.label
+        };
+
+        const asalData=srcSite===cs?srcData:otherData;
+        const lawanData=srcSite===cs?otherData:srcData;
+
+        const statusSimf=mw.status_simf||(mw.validity?({active:'AKTIF',expired:'KADALUARSA',soon:'SEGERA HABIS',unknown:'\u2014'}[expStatus(mw.validity)]):'\u2014');
+        const statusCls={AKTIF:'good','KADALUARSA':'danger','SEGERA HABIS':'warn'}[statusSimf]||'';
+        const infoBar=`
+          <div class="link-info-bar">
+            <div class="info-chip"><span class="info-chip-label">Azimuth</span><span class="info-chip-val">${mw.azim!=null?mw.azim+'\u00B0':'\u2014'}</span></div>
+            <div class="info-chip" title="Dihitung dari koordinat node (haversine)"><span class="info-chip-label">Jarak</span><span class="info-chip-val">${(cs.lat&&cs.lng&&partner.lat&&partner.lng)?((haversineM(cs.lat,cs.lng,partner.lat,partner.lng)/1000).toFixed(2)+' km'):'\u2014'}</span></div>
+            <div class="info-chip"><span class="info-chip-label">Status ISR</span><span class="info-chip-val ${statusCls}">${esc(statusSimf)}</span></div>
+            <div class="info-chip"><span class="info-chip-label">Berlaku s.d.</span><span class="info-chip-val ${expStatus(mw.validity)==='expired'?'danger':expStatus(mw.validity)==='soon'?'warn':''}">${esc(mw.validity)||'\u2014'}</span></div>
+          </div>`;
+        const antSpecs=`
+          <div class="ant-specs">
+            <div class="ant-half">
+              <div class="ant-half-label">Antena</div>
+              <div class="ant-row"><span class="ant-key">H-ASL</span><span class="ant-val">${mw.h_asl!=null?mw.h_asl+' m':'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">Tinggi ant.</span><span class="ant-val">${mw.hgt_ant!=null?mw.hgt_ant+' m':'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">ERP</span><span class="ant-val">${mw.erp!=null?mw.erp+' dBm':'\u2014'}</span></div>
+            </div>
+            <div class="ant-half">
+              <div class="ant-half-label">Perangkat</div>
+              <div class="ant-row"><span class="ant-key">Mfr</span><span class="ant-val">${esc(mw.eq_mfr)||'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">Model</span><span class="ant-val">${esc(mw.eq_mdl)||'\u2014'}</span></div>
+              <div class="ant-row"><span class="ant-key">Trans</span><span class="ant-val">${esc(mw.trans_type)||'\u2014'}</span></div>
+            </div>
+          </div>`;
+        const extraGrid=[
+          mw.licence_date?`<span class="k">Tgl. Lisensi</span><span class="v">${esc(mw.licence_date)}</span>`:'',
+          mw.appl_date?`<span class="k">Tgl. Daftar</span><span class="v">${esc(mw.appl_date)}</span>`:'',
+          mw.umur_isr?`<span class="k">Umur ISR</span><span class="v">${esc(mw.umur_isr)}</span>`:'',
+          (mw.city||mw.province)?`<span class="k">Lokasi</span><span class="v">${esc([mw.city,mw.province].filter(Boolean).join(', '))}</span>`:'',
+        ].filter(Boolean).join('');
+        return `
+          <div class="link-row" id="mwi-${mid}">
+            <div class="link-id-row" onclick="toggleMWLink('${mid}','${safeEid}','${partner.id}')">
+              <span class="link-badge" style="color:${col};background:${col}18;border-color:${col}40">
+                LINK ID \u00B7 ${esc(mw.link_id)||'\u2014'}
+              </span>
+              <i class="ti ti-chevron-down mw-chevron" id="mwc-${mid}" style="margin-left:auto;color:var(--muted);font-size:13px"></i>
+            </div>
+            <div class="isr-pair-grid">
+              <div class="isr-half">
+                <div class="isr-half-label">Stasiun asal</div>
+                <div class="isr-half-stn">${esc(asalData.stn)}</div>
+                <div class="isr-half-simf">${esc(asalData.simf)}</div>
+                <div class="isr-half-freq"><span class="pill-tx">TX</span> ${asalData.freqTx}</div>
+                <div class="isr-half-freq"><span class="pill-rx">RX</span> ${asalData.freqRx}</div>
+              </div>
+              <div class="isr-half">
+                <div class="isr-half-label">Stasiun lawan</div>
+                <div class="isr-half-stn">${esc(lawanData.stn)}</div>
+                <div class="isr-half-simf">${esc(lawanData.simf)}</div>
+                <div class="isr-half-freq"><span class="pill-tx">TX</span> ${lawanData.freqTx}</div>
+                <div class="isr-half-freq"><span class="pill-rx">RX</span> ${lawanData.freqRx}</div>
+              </div>
+            </div>
+            ${infoBar}${antSpecs}
+            ${extraGrid?`<div class="mw-extra-grid">${extraGrid}</div>`:''}
+            <div class="mwlink-detail" id="mwd-${mid}">
+              ${!e.ghost?`<button class="goto-btn" onclick="gotoSite('${partner.id}')">
+                \u2192 Lihat site lawan: ${esc(partner.label)}
+              </button>`:''}
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="lawan-group" id="${gid}">
+          <div class="lawan-header" onclick="toggleLawanGroup('${gid}')">
+            <div class="lawan-dot ${e.ghost?'ghost':''}" style="background:${partnerColor}"></div>
+            <div class="lawan-name">${esc(partner.label)}</div>
+            <span class="lawan-count">${e.mwlinks.length} link</span>
+            <i class="ti ti-chevron-down lawan-chevron" aria-hidden="true"></i>
+          </div>
+          <div class="lawan-links" id="${gid}-links" style="display:none">${linksHtml}</div>
+        </div>`;
+    }).join('');
+
+    return `<div class="panel-tab-pane${ti===0?' active':''}" id="ppane-${cid}" data-clnt="${cid}">
+      ${groupsHtml||`<p style="color:var(--muted);font-size:12px;padding:8px 0">Tidak ada MW link.</p>`}
+    </div>`;
+  }).join('');
+
+  requestAnimationFrame(()=>{ updatePanelHeight(); setTimeout(updatePanelHeight,300); });
+}
+
+function switchPanelTab(cid){
+  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel-tab-pane').forEach(p=>p.classList.remove('active'));
+  const tab=document.getElementById('ptab-'+cid);
+  const pane=document.getElementById('ppane-'+cid);
+  if(tab) tab.classList.add('active');
+  if(pane) pane.classList.add('active');
+  document.getElementById('panelBody').scrollTop=0;
+}
+
+function toggleLawanGroup(gid){
+  const links=document.getElementById(gid+'-links');
+  const chv=document.querySelector(`#${gid} .lawan-chevron`);
+  if(!links) return;
+  const open=links.style.display!=='none'&&links.style.display!=='';
+  links.style.display=open?'none':'flex';
+  if(chv) chv.classList.toggle('open',!open);
+}
+
+function toggleMWLink(mid,safeEid,partnerId){
+  const realEid=safeEid.replace(/__/g,'|');
+  const det=document.getElementById('mwd-'+mid);
+  const chv=document.getElementById('mwc-'+mid);
+  if(!det) return;
+  const wasOpen=det.classList.contains('open');
+  document.querySelectorAll('.mwlink-detail.open').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.mw-chevron.open').forEach(c=>c.classList.remove('open'));
+  currentEdges.forEach(e=>{
+    if(e.line){
+      const clntId=findClientOfSite(e.siteA.id)||findClientOfSite(e.siteB.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      e.line.setStyle({
+        color:e.id===realEid?(e.ghost?color+'ee':color):(e.ghost?color+'44':color+'44'),
+        weight:e.id===realEid?5:e.ghost?2:3,
+        dashArray:e.ghost?'8 5':'8 4 2 4'
+      });
+    }
+  });
+  if(!wasOpen){
+    det.classList.add('open'); if(chv) chv.classList.add('open');
+    openLinkId=mid;
+    currentSites.forEach(s=>{
+      if(s.marker){
+        const clntId=findClientOfSite(s.id);
+        const color=clientColorMap[clntId]||'#00e5ff';
+        s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,s.id===activeSiteId||s.id===partnerId,color));
+      }
+    });
+  } else {
+    openLinkId=null;
+    currentSites.forEach(s=>{
+      if(s.marker){
+        const clntId=findClientOfSite(s.id);
+        const color=clientColorMap[clntId]||'#00e5ff';
+        s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,s.id===activeSiteId,color));
       }
     });
   }
-  edgeGroup.addTo(map);
-  S.edgeLayers[cid] = edgeGroup;
-
-  // Hex markers
-  const hexGroup = L.layerGroup();
-  (ld.sites||[]).forEach(site => {
-    if(!site.lat || !site.lng) return;
-    const lat = parseFloat(site.lat), lng = parseFloat(site.lng);
-    if(isNaN(lat)||isNaN(lng)) return;
-    const cnt = site.link_count||1;
-    const icon = makeHexIcon(color, cnt);
-    const m = L.marker([lat,lng],{icon}).addTo(hexGroup);
-    m.bindTooltip(
-      `<b>${site.site_name||site.isr_id}</b><br>${cnt} link`,
-      {className:'lf-tooltip',direction:'top',offset:[0,-8]}
-    );
-    m.on('click', () => openSitePanel(site, cid));
-  });
-  hexGroup.addTo(map);
-  S.hexLayers[cid] = hexGroup;
 }
 
-/* ══════════════════════════════════════════════
-   TOGGLE CLIENT
-   ══════════════════════════════════════════════ */
-async function toggleClient(cid){
-  if(S.selectedIds.has(cid)){
-    S.selectedIds.delete(cid);
-    clearClientLayers(cid);
-    renderChips();
-    renderDropdown();
-    updateFooterStats();
-    updateLegend();
-    setOverlay(S.selectedIds.size===0?welcomeHTML():'');
+function gotoSite(siteId){
+  const from=sitesIndex[activeSiteId];
+  const to=sitesIndex[siteId];
+  const bc=document.getElementById('panelBreadcrumb');
+  bc.style.display='flex';
+  bc.innerHTML=`
+    <span style="cursor:pointer;color:var(--accent)" onclick="selectSite('${from?.id}',true)">\u2190 ${esc(from?.label)||'Site Asal'}</span>
+    <span style="color:var(--muted)">\u203A</span>
+    <span class="active">${esc(to?.label)||esc(siteId)}</span>`;
+  selectSite(siteId,true);
+}
+
+function repositionZoom(){
+  const topBar=document.querySelector('.top-bar');
+  if(!topBar) return;
+  const h=topBar.getBoundingClientRect().height;
+  // Satu CSS var mengontrol semua: .map-controls top + leaflet zoom margin-top
+  document.documentElement.style.setProperty('--topbar-h', h+'px');
+}
+function updatePanelHeight(){
+  const p=document.getElementById('detailPanel');
+  if(!p) return;
+  const h=p.getBoundingClientRect().height;
+  document.querySelector('.app').style.setProperty('--panel-h', h+'px');
+  repositionZoom();
+}
+
+function closePanel(){
+  document.getElementById('detailPanel').classList.remove('open');
+  document.querySelector('.app').classList.remove('panel-open');
+  document.getElementById('panelTabs').style.display='none';
+  document.getElementById('panelBreadcrumb').style.display='none';
+  activeSiteId=null; openLinkId=null;
+  currentSites.forEach(s=>{
+    if(s.marker){
+      const clntId=findClientOfSite(s.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      s.marker.setIcon(mkSiteIcon(s.linkCount||s.isr.length,s.ghost,false,color));
+    }
+  });
+  currentEdges.forEach(e=>{
+    if(e.line){
+      const clntId=findClientOfSite(e.siteA.id)||findClientOfSite(e.siteB.id);
+      const color=clientColorMap[clntId]||'#00e5ff';
+      e.line.setStyle({color:e.ghost?color+'88':color+'cc',weight:e.ghost?2:3,dashArray:e.ghost?'8 5':'8 4 2 4',opacity:1});
+    }
+  });
+  // kalau toggle off, sembunyikan lagi layer garis & label setelah panel tutup
+  _activeDrawSiteIds = null;
+  if(!showLinks){
+    if(map.hasLayer(edgeLayer)) map.removeLayer(edgeLayer);
+    if(map.hasLayer(linkLabelsLayer)) map.removeLayer(linkLabelsLayer);
+    edgeCanvasVisible=false; scheduleEdgeDraw();
+  } else {
+    scheduleEdgeDraw(); // redraw semua garis karena filter sudah di-null
+  }
+  updateLinkLabels(null);
+  requestAnimationFrame(repositionZoom);
+}
+
+/* =======================================================
+   DROPDOWN MULTI-SELECT
+/* ======================================================= */
+function toggleDropdown(){
+  const dd=document.getElementById('msDropdown');
+  const caret=document.getElementById('chipCaret');
+  const trigger=document.getElementById('msTrigger');
+  const isOpen=dd.classList.contains('open');
+  dd.classList.toggle('open');
+  caret.classList.toggle('open',!isOpen);
+  trigger.classList.toggle('open',!isOpen);
+}
+
+function closeDropdownAll(){
+  document.getElementById('msDropdown').classList.remove('open');
+  document.getElementById('chipCaret').classList.remove('open');
+  document.getElementById('msTrigger').classList.remove('open');
+  // tutup legend
+  document.getElementById('legendPanel').classList.remove('open');
+  document.getElementById('legendBtn').classList.remove('active');
+  // tutup loc popup
+  document.getElementById('locPopup').classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#msTrigger')&&!e.target.closest('#msDropdown')
+    &&!e.target.closest('#legendBtn')&&!e.target.closest('#legendPanel')
+    &&!e.target.closest('#locBtn')&&!e.target.closest('#locPopup')){
+    closeDropdownAll();
+  }
+});
+
+function buildDropdown(){
+  const dd=document.getElementById('msDropdown');
+  const mobList=document.getElementById('mobSheetList');
+  const wasOpen=dd.classList.contains('open');
+  const isAllSelected=selectedIds.size===allClients.length;
+  const allItem=`<div class="ms-item${isAllSelected?' selected':''}" onclick="toggleClient('__all__')">
+    <div class="ms-check"><span class="ms-check-mark">\u2713</span></div>
+    <div class="ms-name" style="color:var(--accent);font-weight:500">Semua klien</div>
+    <span class="ms-count">${allClients.reduce((s,c)=>s+(+c.total_isr),0)} ISR</span>
+  </div>`;
+  const items=allClients.map((c,i)=>{
+    const color=clientColorMap[c.clnt_id]||'#00e5ff';
+    const sel=selectedIds.has(+c.clnt_id);
+    return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.clnt_id})">
+      <div class="ms-check"><span class="ms-check-mark">\u2713</span></div>
+      <div class="ms-dot" style="background:${color}"></div>
+      <div class="ms-name">${esc(c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '))}</div>
+      <div class="ms-stats">
+        <span class="ms-stat-chip">${c.total_isr}ISR</span>
+        <span class="ms-stat-chip">${c.total_link}MW</span>
+      </div>
+    </div>`;
+  }).join('');
+  dd.innerHTML=allItem+items;
+  if(wasOpen) dd.classList.add('open');
+  if(mobList) mobList.innerHTML=allItem+items;
+}
+
+function updateChips(){
+  const area=document.getElementById('chipsArea');
+  if(selectedIds.size===0){
+    area.innerHTML=`<span style="font-size:12px;color:var(--muted)">Pilih klien\u2026</span>`;
+  } else {
+    const isMobile=window.innerWidth<=480;
+    if(isMobile){
+      if(selectedIds.size===allClients.length){
+        area.innerHTML=`<span class="chip" style="border-color:var(--accent);color:var(--accent)">Semua klien (${allClients.length})</span>`;
+      } else if(selectedIds.size===1){
+        const id=[...selectedIds][0];
+        const c=allClients.find(x=>x.clnt_id==id);
+        const col=clientColorMap[id]||'#00e5ff';
+        const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,3).join(' '):id;
+        area.innerHTML=`<span class="chip" style="border-color:${col};color:${col}">${esc(name)}</span>`;
+      } else {
+        area.innerHTML=`<span class="chip" style="border-color:var(--accent);color:var(--accent)">${selectedIds.size} klien aktif</span>`;
+      }
+    } else {
+      area.innerHTML=[...selectedIds].map(id=>{
+        const c=allClients.find(x=>x.clnt_id==id);
+        const col=clientColorMap[id]||'#00e5ff';
+        const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+        return `<span class="chip" style="border-color:${col};color:${col}">${esc(name)}</span>`;
+      }).join('');
+    }
+  }
+  mobRenderChips();
+}
+
+/* ── Versi ringkas chip untuk bottom bar mobile ── */
+function mobRenderChips(){
+  const area=document.getElementById('mobSelChips');
+  if(!area) return;
+  if(selectedIds.size===0){
+    area.innerHTML=`<span style="color:var(--muted);font-size:11px">Pilih klien\u2026</span>`;
     return;
   }
-  S.selectedIds.add(cid);
-  renderChips();
-  renderDropdown();
-  setOverlay('');
+  if(selectedIds.size===allClients.length){
+    area.innerHTML=`<span class="chip" style="border-color:var(--accent);color:var(--accent)">Semua klien (${allClients.length})</span>`;
+    return;
+  }
+  area.innerHTML=[...selectedIds].map(id=>{
+    const c=allClients.find(x=>x.clnt_id==id);
+    const col=clientColorMap[id]||'#00e5ff';
+    const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+    return `<span class="chip" style="border-color:${col};color:${col}">${esc(name)}</span>`;
+  }).join('');
+}
 
-  if(!S.allLayersData[cid]){
-    const loadMsg = document.createElement('div');
-    loadMsg.id = 'loadMsg_'+cid;
-    loadMsg.className = 'state-msg';
-    loadMsg.style.cssText = 'position:absolute;bottom:120px;left:50%;transform:translateX(-50%);z-index:800;background:var(--glass);border:1px solid var(--border);border-radius:6px;padding:8px 18px;backdrop-filter:blur(8px);font-size:12px;pointer-events:none;gap:8px;display:flex';
-    const cname = S.clients.find(c=>c.clnt_id===cid)?.clnt_name||'';
-    loadMsg.innerHTML = `<div class="spinner"></div><span>Memuat ${cname}…</span>`;
-    document.querySelector('.app').appendChild(loadMsg);
+async function toggleClient(clntId){
+  if(clntId==='__all__'){
+    const isAllSelected=selectedIds.size===allClients.length;
+    if(isAllSelected){
+      selectedIds.clear();
+    } else {
+      await ensureAllLoaded();
+      allClients.forEach(c=>selectedIds.add(+c.clnt_id));
+      // Zoom dulu, render setelah animasi selesai
+      // Zoom ke lokasi user, fallback ke Jogja
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(
+          pos=>{
+            setUserLocation(pos.coords.latitude,pos.coords.longitude);
+            map.setView([pos.coords.latitude,pos.coords.longitude],15,{animate:true});
+          },
+          ()=>{ map.setView([-7.80,110.37],15,{animate:true}); }
+        );
+      } else {
+        map.setView([-7.80,110.37],15,{animate:true});
+      }
+      if(showLinks){
+        setLinkVisibility(false);
+      }
+    }
+  } else {
+    const id=+clntId;
+    if(selectedIds.has(id)){
+      selectedIds.delete(id);
+    } else {
+      selectedIds.add(id);
+      showSkeletonForClient(id);
+      await ensureLoaded(id);
+      clearSkeleton();
+    }
+  }
 
+  const skipFitNow=(clntId==='__all__'&&selectedIds.size===allClients.length);
+  if(skipFitNow){
+    buildDropdown();
+    updateChips();
+    closePanel();
+    map.once('moveend',()=>{ renderAllVisible(true); });
+  } else {
+    renderAllVisible(false);
+    buildDropdown();
+    updateChips();
+    closePanel();
+  }
+}
+
+async function ensureLoaded(clntId){
+  clntId=+clntId;
+  if(allLayersData[clntId]) return;
+  let j;
+  for(let attempt=0;attempt<2;attempt++){
     try{
-      const d = await fetchSiteData(cid);
-      S.allLayersData[cid] = d;
-    } catch(err){
-      S.selectedIds.delete(cid);
-      renderChips();
-      renderDropdown();
-      document.getElementById('loadMsg_'+cid)?.remove();
-      alert('Gagal memuat data: '+err.message);
+      const r=await fetch(`${API.isr}?clnt_id=${clntId}`,{signal:AbortSignal.timeout(20000)});
+      j=await r.json();
+      break;
+    }catch(e){
+      if(attempt===0){ await new Promise(res=>setTimeout(res,1500)); continue; }
+      const overlay=document.getElementById('stateOverlay');
+      overlay.style.display='flex';
+      overlay.innerHTML='<span>&#9888; Gagal memuat data. Coba lagi atau refresh halaman.</span>';
+      console.error('fetch isr error',e);
       return;
     }
-    document.getElementById('loadMsg_'+cid)?.remove();
-    renderDropdown();
   }
+  if(!j||!j.success){
+    const overlay=document.getElementById('stateOverlay');
+    overlay.style.display='flex';
+    overlay.innerHTML=`<span>&#9888; ${j?.error||'Gagal memuat data ISR'}</span>`;
+    console.error('isr error',j?.error);
+    return;
+  }
+  const rows=j.raw||[];
+  let sites=clusterISRtoSites(rows);
+  // ID site dari clusterISRtoSites (S0, S1, G0, ...) hanya unik per-klien.
+  // Saat banyak klien aktif sekaligus, ID yang sama bisa kolisi antar klien
+  // dan menimpa entri di sitesIndex/edgesIndex -> data panel jadi salah.
+  // Prefix dengan clnt_id SEBELUM buildMWLinks agar edgeKey & _src_site_id konsisten.
+  sites.forEach(s=>{ s.id=`c${clntId}_${s.id}`; });
+  const edges=buildMWLinks(sites,rows);
+  const connectedIds=new Set();
+  edges.forEach(e=>{ connectedIds.add(e.siteA.id); connectedIds.add(e.siteB.id); });
+  sites=sites.filter(s=>!s.ghost||connectedIds.has(s.id));
+  allLayersData[clntId]={sites,edges,rows};
+}
 
-  renderClientLayer(cid);
-  updateFooterStats();
+async function ensureAllLoaded(){
+  const overlay=document.getElementById('stateOverlay');
+  overlay.style.display='flex';
+  overlay.innerHTML='<div class="spinner"></div><span>Memuat semua klien\u2026</span>';
+  await Promise.all(allClients.map(c=>ensureLoaded(c.clnt_id)));
+  overlay.style.display='none';
+}
+
+/* =======================================================
+   FOOTER STATS
+/* ======================================================= */
+function updateFooter(){
+  const ids=[...selectedIds];
+  const isAll=ids.length===allClients.length;
+  let totalIsr=0,totalLink=0;
+  ids.forEach(id=>{
+    const c=allClients.find(x=>x.clnt_id==id);
+    if(c){ totalIsr+=(+c.total_isr); totalLink+=(+c.total_link); }
+  });
+  document.getElementById('footIsr').textContent=totalIsr.toLocaleString('id');
+  document.getElementById('footLink').textContent=totalLink.toLocaleString('id');
+  document.getElementById('footKlien').textContent=ids.length;
+  const mi=document.getElementById('mobIsr'); if(mi) mi.textContent=totalIsr.toLocaleString('id');
+  const mm=document.getElementById('mobMw'); if(mm) mm.textContent=totalLink.toLocaleString('id');
   updateLegend();
-
-  const pts = (S.allLayersData[cid].sites||[])
-    .filter(s=>s.lat&&s.lng)
-    .map(s=>[parseFloat(s.lat),parseFloat(s.lng)]);
-  if(pts.length>0 && S.selectedIds.size===1){
-    const b = L.latLngBounds(pts);
-    map.fitBounds(b,{padding:[60,60],maxZoom:12});
-  }
 }
 
-/* ══════════════════════════════════════════════
-   LINK TOGGLE
-   ══════════════════════════════════════════════ */
-document.getElementById('linkToggle').addEventListener('change', e => {
-  S.showLinks = e.target.checked;
-  S.selectedIds.forEach(cid => {
-    if(S.edgeLayers[cid]) map.removeLayer(S.edgeLayers[cid]);
-    delete S.edgeLayers[cid];
-    renderClientLayer(cid);
-  });
-});
-
-/* ══════════════════════════════════════════════
-   LEGEND
-   ══════════════════════════════════════════════ */
-function updateLegend(){
-  const inner = document.getElementById('legendInner');
-  if(!inner) return;
-  const rows = S.clients.filter(c=>S.selectedIds.has(c.clnt_id)).map(c=>{
-    const col = clientColor(S.clients.indexOf(c));
-    return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div>${c.clnt_name}</div>`;
-  });
-  inner.innerHTML = rows.join('');
-}
-
+/* \u2500\u2500 TOGGLE LEGEND \u2500\u2500 */
 function toggleLegend(){
-  S.legendOpen = !S.legendOpen;
-  const btn = document.getElementById('legendBtn');
-  const panel = document.getElementById('legendPanel');
-  btn.classList.toggle('active', S.legendOpen);
-  btn.querySelector('.legend-caret').textContent = S.legendOpen ? '▼' : '▲';
-  panel.classList.toggle('open', S.legendOpen);
+  const panel=document.getElementById('legendPanel');
+  const btn=document.getElementById('legendBtn');
+  const isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open',!isOpen);
+  btn.classList.toggle('active',!isOpen);
+  requestAnimationFrame(repositionZoom);
 }
 
-/* ══════════════════════════════════════════════
-   WELCOME STATE (peta tetap tampil)
-   ══════════════════════════════════════════════ */
-function welcomeHTML(){
-  return `<div style="background:var(--glass);border:1px solid var(--border);border-radius:8px;padding:14px 18px;backdrop-filter:blur(12px);font-size:12px;color:var(--muted);text-align:center;max-width:260px;line-height:1.7;box-shadow:var(--shadow-float)">
-    Pilih klien melalui selector<br>untuk menampilkan data
-  </div>`;
-}
-
-/* ══════════════════════════════════════════════
-   DETAIL PANEL
-   ══════════════════════════════════════════════ */
-function openSitePanel(site, primaryCid){
-  S.currentSiteData = site;
-  document.getElementById('panelTitle').textContent = site.site_name || site.isr_id || 'SITE';
-  document.getElementById('panelSub').textContent = site.alamat || site.address || '';
-
-  const panelTabs  = document.getElementById('panelTabs');
-  const panelBody  = document.getElementById('panelBody');
-  const breadcrumb = document.getElementById('panelBreadcrumb');
-
-  // Kumpulkan semua klien yang punya data di site ini (berdasar isr_id)
-  const siteClients = [];
-  S.clients.forEach((c,ci) => {
-    if(!S.selectedIds.has(c.clnt_id)) return;
-    const ld = S.allLayersData[c.clnt_id];
-    if(!ld) return;
-    const edges = (ld.edges||[]).filter(e =>
-      e.from_isr_id == site.isr_id || e.to_isr_id == site.isr_id
-    );
-    if(edges.length > 0 || c.clnt_id == primaryCid){
-      siteClients.push({client:c, idx:ci, edges});
+/* =======================================================
+   LOAD CLIENTS
+/* ======================================================= */
+async function loadClients(){
+  let j;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const r=await fetch(API.clients,{signal:AbortSignal.timeout(10000)});
+      j=await r.json();
+      break;
+    }catch(e){
+      if(attempt===0){ await new Promise(res=>setTimeout(res,1500)); continue; }
+      document.getElementById('stateOverlay').innerHTML='<span>&#9888; Koneksi ke server gagal. Refresh untuk coba lagi.</span>';
+      return;
     }
+  }
+  if(!j.success){
+    document.getElementById('stateOverlay').innerHTML=`<span>\u26A0 ${j.error||'Gagal memuat klien'}</span>`;
+    return;
+  }
+  allClients=j.data;
+
+  // Assign warna per klien
+  let paletteIdx=0;
+  allClients.forEach((c)=>{
+    const named=assignClientColor(c.clnt_name);
+    if(named){ clientColorMap[+c.clnt_id]=named; }
+    else { clientColorMap[+c.clnt_id]=CLIENT_COLORS[paletteIdx%CLIENT_COLORS.length]; paletteIdx++; }
   });
 
-  if(siteClients.length <= 1){
-    // Single client — no tabs
-    panelTabs.style.display = 'none';
-    breadcrumb.style.display = 'none';
-    S.currentTabId = siteClients[0]?.client?.id || primaryCid;
-    renderPanelContent(site, primaryCid, panelBody);
+  // Default: tidak ada yang dipilih, user pilih sendiri
+  buildDropdown();
+  updateChips();
+
+  // Sembunyikan overlay, tampilkan pesan pilih klien
+  const overlay=document.getElementById('stateOverlay');
+  overlay.style.display='flex';
+  overlay.innerHTML='<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Pilih klien untuk melihat peta</span>';
+}
+
+/* \u2500\u2500 TOGGLE LINK \u2500\u2500 */
+function setLinkVisibility(checked){
+  showLinks=checked;
+  const lt=document.getElementById('linkToggle'); if(lt) lt.checked=checked;
+  const mlt=document.getElementById('mobLinkToggle'); if(mlt) mlt.checked=checked;
+  if(showLinks){
+    _activeDrawSiteIds=null; // toggle on = gambar semua garis
+    if(!map.hasLayer(edgeLayer)) edgeLayer.addTo(map);
+    if(!map.hasLayer(linkLabelsLayer)) linkLabelsLayer.addTo(map);
+    edgeCanvasVisible=true; scheduleEdgeDraw();
   } else {
-    // Multi client tabs
-    panelTabs.style.display = 'flex';
-    breadcrumb.style.display = 'none';
-    S.currentTabId = primaryCid;
-    renderTabs(siteClients, site, panelTabs, panelBody);
+    if(map.hasLayer(edgeLayer)) map.removeLayer(edgeLayer);
+    if(map.hasLayer(linkLabelsLayer)) map.removeLayer(linkLabelsLayer);
+    edgeCanvasVisible=false; scheduleEdgeDraw();
   }
-
-  document.getElementById('detailPanel').classList.add('open');
-  closeLegend();
 }
-
-function renderTabs(siteClients, site, tabsEl, bodyEl){
-  tabsEl.innerHTML = siteClients.map(sc => {
-    const col = clientColor(sc.idx);
-    const active = sc.client.clnt_id === S.currentTabId ? ' active' : '';
-    return `<div class="panel-tab${active}" style="--tab-color:${col}" onclick="switchTab(${sc.client.clnt_id}, this)">
-      <div class="panel-tab-dot"></div>
-      ${sc.client.clnt_name}
-    </div>`;
-  }).join('');
-  renderPanelContent(site, S.currentTabId, bodyEl);
-}
-
-function switchTab(cid, tabEl){
-  S.currentTabId = cid;
-  document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
-  tabEl.classList.add('active');
-  renderPanelContent(S.currentSiteData, cid, document.getElementById('panelBody'));
-}
-
-function renderPanelContent(site, cid, container){
-  container.innerHTML = `<div class="state-msg" style="height:80px"><div class="spinner"></div><span>Memuat…</span></div>`;
-  fetchLinkDetail(site.isr_id).then(data => {
-    container.innerHTML = buildPanelHTML(data, site, cid);
-    attachPanelEvents(container);
-  }).catch(err => {
-    container.innerHTML = `<div class="state-msg" style="height:80px;color:var(--red)">Gagal: ${err.message}</div>`;
-  });
-}
-
-function closeSitePanel(){
-  document.getElementById('detailPanel').classList.remove('open');
-}
-
-document.getElementById('panelClose').onclick = closeSitePanel;
-
-/* ══════════════════════════════════════════════
-   PANEL HTML BUILDER
-   ══════════════════════════════════════════════ */
-function licenseStatus(exp){
-  if(!exp) return {cls:'',txt:'—'};
-  const d = new Date(exp), now = new Date();
-  const diff = (d-now)/(1000*86400);
-  if(diff<0) return {cls:'chip-exp',txt:'Exp'};
-  if(diff<90) return {cls:'chip-soon',txt:'Soon'};
-  return {cls:'chip-ok',txt:'OK'};
-}
-
-function buildPanelHTML(data, site, cid){
-  const ci = S.clients.findIndex(c=>c.clnt_id===cid);
-  const color = clientColor(ci<0?0:ci);
-
-  // Filter edges untuk klien ini
-  const ld = S.allLayersData[cid];
-  const clientEdges = ld ? (ld.edges||[]).filter(e =>
-    e.from_isr_id == site.isr_id || e.to_isr_id == site.isr_id
-  ) : [];
-
-  // Group links by lawan site
-  const lawanMap = {};
-  (data.links||[]).forEach(link => {
-    const lawan = link.remote_site_name || link.remote_isr_id || 'Unknown';
-    if(!lawanMap[lawan]) lawanMap[lawan] = [];
-    lawanMap[lawan].push(link);
-  });
-
-  let html = '';
-
-  // Goto koordinat
-  html += `<button class="goto-btn" onclick="map.setView([${site.lat||0},${site.lng||0}],14);closeSitePanel()">
-    &#9655; Zoom ke Site
-  </button>`;
-
-  if(Object.keys(lawanMap).length === 0){
-    html += `<div style="padding:20px 0;text-align:center;color:var(--muted);font-size:12px">Tidak ada data link</div>`;
-    return html;
-  }
-
-  Object.keys(lawanMap).forEach(lawan => {
-    const links = lawanMap[lawan];
-    const uid = 'lw_'+btoa(encodeURIComponent(lawan)).replace(/[^a-z0-9]/gi,'').substr(0,8);
-
-    html += `<div class="lawan-group">
-      <div class="lawan-header" onclick="toggleLawan('${uid}')">
-        <div class="lawan-dot" style="background:${color}"></div>
-        <span class="lawan-name">${lawan}</span>
-        <span class="lawan-count">${links.length} link</span>
-        <span class="lawan-chevron" id="chev_${uid}">▾</span>
-      </div>
-      <div class="lawan-links" id="lawan_${uid}" style="display:none">`;
-
-    links.forEach(link => {
-      const lic = licenseStatus(link.license_expiry);
-      const linkEdge = clientEdges.find(e =>
-        (e.from_isr_id==site.isr_id && e.to_isr_id==link.remote_isr_id) ||
-        (e.to_isr_id==site.isr_id && e.from_isr_id==link.remote_isr_id)
-      );
-      const mwId = 'mw_'+Math.random().toString(36).substr(2,7);
-      html += `<div class="link-row">
-        <div class="link-id-row" onclick="toggleMwDetail('${mwId}')">
-          <span class="link-badge ${lic.cls}" style="${!lic.cls?'border-color:var(--border);color:var(--muted)':''}">${link.link_id||link.id||'LINK'}</span>
-          <span style="font-size:10px;color:var(--muted);flex:1">${link.band||''} ${link.capacity||''}</span>
-          ${lic.cls?`<span class="link-badge ${lic.cls}" style="font-size:9px">${lic.txt}</span>`:''}
-          <span class="mw-chevron" id="${mwId}_chev">▾</span>
-        </div>
-
-        <!-- ISR pair -->
-        <div class="isr-pair-grid">
-          <div class="isr-half">
-            <div class="isr-half-label">Local</div>
-            <div class="isr-half-stn">${link.local_station_name||site.site_name||site.isr_id||'—'}</div>
-            <div class="isr-half-simf">${link.local_simf||link.local_isr||'—'}</div>
-            <div class="isr-half-freq">
-              <span class="pill-tx">TX</span> ${link.local_tx_freq||'—'}
-              &nbsp;<span class="pill-rx">RX</span> ${link.local_rx_freq||'—'}
-            </div>
-          </div>
-          <div class="isr-half">
-            <div class="isr-half-label">Remote</div>
-            <div class="isr-half-stn">${lawan}</div>
-            <div class="isr-half-simf">${link.remote_simf||link.remote_isr||'—'}</div>
-            <div class="isr-half-freq">
-              <span class="pill-tx">TX</span> ${link.remote_tx_freq||'—'}
-              &nbsp;<span class="pill-rx">RX</span> ${link.remote_rx_freq||'—'}
-            </div>
-          </div>
-        </div>
-
-        <!-- Info chips -->
-        <div class="link-info-bar">
-          <div class="info-chip">
-            <span class="info-chip-label">Jarak</span>
-            <span class="info-chip-val">${link.distance_km ? link.distance_km+'km' : '—'}</span>
-          </div>
-          <div class="info-chip">
-            <span class="info-chip-label">Kapasitas</span>
-            <span class="info-chip-val">${link.capacity||'—'}</span>
-          </div>
-          <div class="info-chip">
-            <span class="info-chip-label">Band</span>
-            <span class="info-chip-val">${link.band||'—'}</span>
-          </div>
-          <div class="info-chip">
-            <span class="info-chip-label">Lisensi</span>
-            <span class="info-chip-val${lic.cls?' '+lic.cls:''}">${link.license_expiry ? new Date(link.license_expiry).getFullYear() : '—'}</span>
-          </div>
-        </div>
-
-        <!-- MW detail collapsible -->
-        <div class="mwlink-detail" id="${mwId}">
-          ${buildMwDetail(link)}
-        </div>
-      </div>`;
-    });
-
-    html += `</div></div>`;
-  });
-
-  return html;
-}
-
-function buildMwDetail(link){
-  const fields = [
-    ['Polarisasi', link.polarization],
-    ['Modulasi', link.modulation],
-    ['Output Power', link.output_power],
-    ['Threshold BER', link.ber_threshold],
-    ['Konfigurasi', link.configuration],
-    ['Vendor', link.vendor],
-    ['Model', link.model],
-    ['No. NIE', link.nie_number],
-    ['S/N Local', link.serial_local],
-    ['S/N Remote', link.serial_remote],
-  ].filter(([k,v]) => v);
-
-  if(!fields.length) return '<div style="font-size:11px;color:var(--muted);padding:4px 0">Tidak ada detail tambahan</div>';
-
-  let g = '<div class="mw-extra-grid">';
-  fields.forEach(([k,v]) => {
-    g += `<span class="k">${k}</span><span class="v">${v}</span>`;
-  });
-  g += '</div>';
-
-  // Antena
-  const hasAnt = link.ant_local_size || link.ant_remote_size;
-  if(hasAnt){
-    g += `<div class="ant-specs">
-      <div class="ant-half">
-        <div class="ant-half-label">Antena Local</div>
-        ${link.ant_local_size?`<div class="ant-row"><span class="ant-key">Ukuran</span><span class="ant-val">${link.ant_local_size}</span></div>`:''}
-        ${link.ant_local_gain?`<div class="ant-row"><span class="ant-key">Gain</span><span class="ant-val">${link.ant_local_gain} dBi</span></div>`:''}
-        ${link.ant_local_type?`<div class="ant-row"><span class="ant-key">Tipe</span><span class="ant-val">${link.ant_local_type}</span></div>`:''}
-      </div>
-      <div class="ant-half">
-        <div class="ant-half-label">Antena Remote</div>
-        ${link.ant_remote_size?`<div class="ant-row"><span class="ant-key">Ukuran</span><span class="ant-val">${link.ant_remote_size}</span></div>`:''}
-        ${link.ant_remote_gain?`<div class="ant-row"><span class="ant-key">Gain</span><span class="ant-val">${link.ant_remote_gain} dBi</span></div>`:''}
-        ${link.ant_remote_type?`<div class="ant-row"><span class="ant-key">Tipe</span><span class="ant-val">${link.ant_remote_type}</span></div>`:''}
-      </div>
-    </div>`;
-  }
-  return g;
-}
-
-function attachPanelEvents(container){
-  // touch swipe to close on mobile
-}
-
-/* ══════════════════════════════════════════════
-   PANEL TOGGLE HELPERS (global scope)
-   ══════════════════════════════════════════════ */
-function toggleLawan(uid){
-  const el = document.getElementById('lawan_'+uid);
-  const chev = document.getElementById('chev_'+uid);
-  if(!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : 'flex';
-  el.style.flexDirection = 'column';
-  if(chev) chev.classList.toggle('open', !open);
-}
-
-function toggleMwDetail(id){
-  const el = document.getElementById(id);
-  const chev = document.getElementById(id+'_chev');
-  if(!el) return;
-  el.classList.toggle('open');
-  if(chev) chev.classList.toggle('open', el.classList.contains('open'));
-}
-
-/* ══════════════════════════════════════════════
-   GPS / LOCATION
-   ══════════════════════════════════════════════ */
-document.getElementById('locBtn').addEventListener('click', () => {
-  const popup = document.getElementById('locPopup');
-  popup.classList.toggle('open');
+document.getElementById('linkToggle').addEventListener('change',function(){
+  setLinkVisibility(this.checked);
 });
+function mobSwitchLinks(checked){ setLinkVisibility(checked); }
+
+document.getElementById('basemapSel').addEventListener('change',function(){
+  setBasemap(this.value);
+});
+function mobSwitchBasemap(v){ setBasemap(v); }
+
+document.getElementById('themeToggle').addEventListener('change',function(){
+  applyUiTheme(this.checked);
+});
+
+document.getElementById('panelClose').addEventListener('click',closePanel);
+
+// Scroll di dalam panel jangan bocor ke map
+document.getElementById('detailPanel').addEventListener('wheel',(ev)=>{
+  ev.stopPropagation();
+},{passive:true});
+// mobile: cegah swipe di panel bocor ke map (pan map)
+const _panel=document.getElementById('detailPanel');
+_panel.addEventListener('touchstart',(ev)=>{ ev.stopPropagation(); },{passive:true});
+_panel.addEventListener('touchmove',(ev)=>{ ev.stopPropagation(); },{passive:true});
+
+// swipe-down-to-close dinonaktifkan; tutup via silang atau tap luar
+
+/* ── LOCATION MARKER ── */
+let userLocMarker=null;
+
+function setUserLocation(lat,lng){
+  if(userLocMarker) map.removeLayer(userLocMarker);
+  const icon=L.divIcon({
+    html:`<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+      <circle cx="11" cy="11" r="10" fill="#00e5ff" fill-opacity=".2" stroke="#00e5ff" stroke-width="2"/>
+      <circle cx="11" cy="11" r="4" fill="#00e5ff"/>
+      <circle cx="11" cy="11" r="4" fill="#00e5ff" opacity=".4">
+        <animate attributeName="r" from="4" to="10" dur="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" from=".4" to="0" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+    </svg>`,
+    className:'',iconSize:[22,22],iconAnchor:[11,11]
+  });
+  userLocMarker=L.marker([lat,lng],{icon,zIndexOffset:2000,interactive:false}).addTo(map);
+  userLocMarker.bindTooltip('Lokasi Anda',{className:'lf-tooltip',direction:'right',offset:[12,0]});
+}
 
 function useGPSLoc(){
-  if(!navigator.geolocation){alert('Browser tidak support GPS');return}
-  navigator.geolocation.getCurrentPosition(pos => {
-    document.getElementById('manualLat').value = pos.coords.latitude.toFixed(6);
-    document.getElementById('manualLng').value = pos.coords.longitude.toFixed(6);
-  }, err => alert('GPS error: '+err.message));
+  if(!navigator.geolocation){ alert('Geolocation tidak didukung browser ini.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('manualLat').value=pos.coords.latitude.toFixed(6);
+    document.getElementById('manualLng').value=pos.coords.longitude.toFixed(6);
+  },()=>alert('Gagal mendapatkan lokasi GPS.'));
 }
 
 function useManualLoc(){
-  const lat = parseFloat(document.getElementById('manualLat').value);
-  const lng = parseFloat(document.getElementById('manualLng').value);
-  if(isNaN(lat)||isNaN(lng)){alert('Koordinat tidak valid');return}
-  S.userLat = lat; S.userLng = lng;
-  placeUserMarker(lat,lng);
+  const lat=parseFloat(document.getElementById('manualLat').value);
+  const lng=parseFloat(document.getElementById('manualLng').value);
+  if(isNaN(lat)||isNaN(lng)){ alert('Masukkan koordinat yang valid.'); return; }
+  document.getElementById('locPopup').classList.remove('open');
+  setUserLocation(lat,lng);
+  map.setView([lat,lng],15,{animate:true});
 }
 
 function goToLoc(){
-  const lat = parseFloat(document.getElementById('manualLat').value);
-  const lng = parseFloat(document.getElementById('manualLng').value);
-  if(isNaN(lat)||isNaN(lng)){alert('Koordinat tidak valid');return}
-  S.userLat = lat; S.userLng = lng;
-  placeUserMarker(lat,lng);
-  map.setView([lat,lng],14);
-  document.getElementById('locPopup').classList.remove('open');
-}
-
-function placeUserMarker(lat,lng){
-  if(S.userMarker) map.removeLayer(S.userMarker);
-  const pulseIcon = L.divIcon({
-    html:`<div style="width:14px;height:14px;border-radius:50%;background:var(--accent);
-      box-shadow:0 0 0 4px rgba(0,229,255,.25),0 0 12px rgba(0,229,255,.5);
-      animation:none;border:2px solid #fff"></div>`,
-    className:'',iconSize:[14,14],iconAnchor:[7,7]
-  });
-  S.userMarker = L.marker([lat,lng],{icon:pulseIcon,zIndexOffset:1000}).addTo(map);
-  S.userMarker.bindTooltip(`${lat.toFixed(5)}, ${lng.toFixed(5)}`,{permanent:false,className:'lf-tooltip'});
-}
-
-/* ── Compass ── */
-document.getElementById('compassBtn').addEventListener('click', () => {
-  map.setBearing ? map.setBearing(0) : null;
-  document.getElementById('compassNeedle').style.transform = 'rotate(0deg)';
-  document.getElementById('compassBtn').classList.remove('rotated');
-});
-
-/* ══════════════════════════════════════════════
-   INIT
-   ══════════════════════════════════════════════ */
-function closeLegend(){
-  if(S.legendOpen) toggleLegend();
-}
-
-// Close panel on map click
-map.on('click', () => {
-  document.getElementById('locPopup').classList.remove('open');
-});
-
-(async function init(){
-  setOverlay(welcomeHTML());
-  try {
-    const clients = await fetchClients();
-    S.clients = clients;
-    renderDropdown();
-    renderChips();
-    mobRenderSheet();
-    updateFooterStats();
-    updateLegend();
-    setTimeout(recalcLayout, 100);
-  } catch(err){
-    setOverlay(`<div style="background:var(--glass);border:1px solid var(--red);border-radius:8px;padding:14px 18px;backdrop-filter:blur(12px);color:var(--red);font-size:12px">Gagal memuat klien: ${err.message}</div>`);
+  const lat=parseFloat(document.getElementById('manualLat').value);
+  const lng=parseFloat(document.getElementById('manualLng').value);
+  if(!isNaN(lat)&&!isNaN(lng)){
+    useManualLoc();
+  } else {
+    useGPSLoc();
+    setTimeout(()=>{
+      const la=parseFloat(document.getElementById('manualLat').value);
+      const lo=parseFloat(document.getElementById('manualLng').value);
+      if(!isNaN(la)&&!isNaN(lo)){ useManualLoc(); }
+    },1500);
   }
-})();
+}
+
+document.getElementById('locBtn').addEventListener('click',(e)=>{
+  e.stopPropagation();
+  document.getElementById('locPopup').classList.toggle('open');
+});
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('#locBtn')&&!e.target.closest('#locPopup'))
+    document.getElementById('locPopup').classList.remove('open');
+});
+
+window.addEventListener("resize", ()=>{ repositionZoom(); updateChips(); recalcLayout(); });
+window.addEventListener("orientationchange", ()=>{ setTimeout(()=>{ repositionZoom(); updateChips(); recalcLayout(); }, 150); });
+// Posisi awal zoom control setelah DOM siap
+// Panggil repositionZoom setelah render selesai — pakai setTimeout sebagai fallback
+requestAnimationFrame(()=>{ repositionZoom(); recalcLayout(); setTimeout(()=>{ repositionZoom(); recalcLayout(); }, 300); });
+loadClients();
 
 /* ══════════════════════════════════════════════
-   MOBILE JS
+   MOBILE JS — drawer, sheet, FAB, GPS ringkas
+   Semua memanggil fungsi inti yang sama di atas,
+   supaya data & state selalu konsisten dgn desktop.
    ══════════════════════════════════════════════ */
-const isMobile = () => window.innerWidth <= 768;
+const isMobileView=()=>window.innerWidth<=768;
 
-/* ── Drawer (settings) ── */
+/* ── Drawer (pengaturan) ── */
 function mobOpenDrawer(){
-  if(!isMobile()) return;
   document.getElementById('mobDrawer').classList.add('open');
   document.getElementById('mobScrim').classList.add('open');
   mobCloseSheet();
+  // sinkronkan kontrol drawer dengan state saat ini
+  const bm=document.getElementById('basemapSel').value;
+  document.getElementById('mobBasemap').value=bm;
+  document.getElementById('mobThemeToggle').checked=document.getElementById('themeToggle').checked;
+  document.getElementById('mobLinkToggle').checked=showLinks;
 }
 function mobCloseDrawer(){
   document.getElementById('mobDrawer').classList.remove('open');
   document.getElementById('mobScrim').classList.remove('open');
 }
 
-/* ── Sheet (client list) ── */
-let mobSheetOpen = false;
-function mobToggleSheet(){
-  mobSheetOpen ? mobCloseSheet() : mobOpenSheet();
-}
+/* ── Sheet (pilih klien) — versi mobile dari dropdown ── */
+let mobSheetOpen=false;
+function mobToggleSheet(){ mobSheetOpen?mobCloseSheet():mobOpenSheet(); }
 function mobOpenSheet(){
-  mobSheetOpen = true;
+  mobSheetOpen=true;
   document.getElementById('mobSheet').classList.add('open');
   document.getElementById('mobSelCaret').classList.add('open');
   document.getElementById('mobSelTrigger').classList.add('open');
 }
 function mobCloseSheet(){
-  mobSheetOpen = false;
+  mobSheetOpen=false;
   document.getElementById('mobSheet').classList.remove('open');
   document.getElementById('mobSelCaret').classList.remove('open');
   document.getElementById('mobSelTrigger').classList.remove('open');
 }
 
-/* ── Render sheet list ── */
-function mobRenderSheet(){
-  const list = document.getElementById('mobSheetList');
-  if(!list) return;
-  list.innerHTML = S.clients.map((c,i) => {
-    const col = clientColor(i);
-    const sel = S.selectedIds.has(c.clnt_id);
-    const ld = S.allLayersData[c.clnt_id];
-    const isrN = ld ? (ld.sites||[]).length : (c.total_isr||'—');
-    const mwN  = ld ? (ld.edges||[]).length : (c.total_link||'—');
-    return `<div class="ms-item${sel?' selected':''}" onclick="mobToggleClient(${c.clnt_id})">
-      <div class="ms-check"><span class="ms-check-mark">✓</span></div>
-      <div class="ms-dot" style="background:${col}"></div>
-      <span class="ms-name">${c.clnt_name}</span>
-      <div class="ms-stats">
-        <span class="ms-stat-chip">${isrN}ISR</span>
-        <span class="ms-stat-chip">${mwN}MW</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ── Toggle client (mobile wrapper) ── */
-async function mobToggleClient(cid){
-  await toggleClient(cid);   // pakai fungsi utama yang sudah ada
-  mobRenderSheet();
-  mobRenderChips();
-  mobUpdateStats();
-  mobUpdateLegend();
-}
-
-/* ── Chips di bottom bar ── */
-function mobRenderChips(){
-  const area = document.getElementById('mobSelChips');
-  if(!area) return;
-  const sel = S.clients.filter(c => S.selectedIds.has(c.clnt_id));
-  if(sel.length === 0){
-    area.innerHTML = `<span style="color:var(--muted);font-size:11px">Pilih klien…</span>`;
-    return;
-  }
-  area.innerHTML = sel.map(c => {
-    const col = clientColor(S.clients.indexOf(c));
-    return `<span class="chip" style="color:${col};border-color:${col};font-size:10px;padding:2px 6px">${c.clnt_name}</span>`;
-  }).join('');
-}
-
-/* ── Stats di bottom bar ── */
-function mobUpdateStats(){
-  let isr=0, mw=0;
-  S.clients.forEach(c => {
-    if(!S.selectedIds.has(c.clnt_id)) return;
-    const ld = S.allLayersData[c.clnt_id];
-    if(ld){ isr += (ld.sites||[]).length; mw += (ld.edges||[]).length; }
-  });
-  const mi = document.getElementById('mobIsr');
-  const mm = document.getElementById('mobMw');
-  if(mi) mi.textContent = isr||'—';
-  if(mm) mm.textContent = mw||'—';
-}
-
-/* ── Legend di drawer ── */
-function mobUpdateLegend(){
-  updateLegend();
-  const wrap = document.getElementById('mobDrawerLegend');
-  const inner = document.getElementById('mobLegendItems');
-  if(!wrap || !inner) return;
-  const sel = S.clients.filter(c => S.selectedIds.has(c.clnt_id));
-  wrap.style.display = sel.length ? '' : 'none';
-  inner.innerHTML = sel.map(c => {
-    const col = clientColor(S.clients.indexOf(c));
-    return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div>${c.clnt_name}</div>`;
-  }).join('');
-}
-
-/* ── Basemap (mobile) ── */
-function mobSwitchBasemap(v){
-  switchBasemap(v);
-  document.getElementById('basemapSel').value = v;
-  if(v==='dark'){ document.documentElement.setAttribute('data-theme','dark'); document.getElementById('mobThemeToggle').checked=false; document.getElementById('themeToggle').checked=false; }
-  else if(v==='bright'){ document.documentElement.setAttribute('data-theme','bright'); document.getElementById('mobThemeToggle').checked=true; document.getElementById('themeToggle').checked=true; }
-}
-
-/* ── Tema UI (mobile) ── */
-function mobSwitchTheme(bright){
-  document.documentElement.setAttribute('data-theme', bright ? 'bright' : 'dark');
-  document.getElementById('themeToggle').checked = bright;
-  const bv = bright ? 'bright' : 'dark';
-  if(document.getElementById('basemapSel').value !== 'satellite'){
-    document.getElementById('basemapSel').value = bv;
-    document.getElementById('mobBasemap').value = bv;
-    switchBasemap(bv);
-  }
-}
-
-/* ── Garis link (mobile) ── */
-function mobSwitchLinks(v){
-  document.getElementById('linkToggle').checked = v;
-  S.showLinks = v;
-  S.selectedIds.forEach(cid => {
-    if(S.edgeLayers[cid]) map.removeLayer(S.edgeLayers[cid]);
-    delete S.edgeLayers[cid];
-    renderClientLayer(cid);
-  });
-}
-
-/* ── GPS (mobile) ── */
-let mobGpsActive = false;
+/* ── GPS ringkas: tombol bulat di kluster zoom ── */
 function mobToggleGPS(){
-  if(mobGpsActive){
-    mobGpsActive = false;
-    document.getElementById('mobLocBtn').style.color = '';
-    if(S.locWatchId){ navigator.geolocation.clearWatch(S.locWatchId); S.locWatchId = null; }
-    return;
-  }
-  if(!navigator.geolocation){ alert('Browser tidak support GPS'); return; }
-  mobGpsActive = true;
-  document.getElementById('mobLocBtn').style.color = 'var(--green)';
-  navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude, lng = pos.coords.longitude;
-    placeUserMarker(lat, lng);
-    map.setView([lat, lng], 14);
-    document.getElementById('mobLat').value = lat.toFixed(6);
-    document.getElementById('mobLng').value = lng.toFixed(6);
-  }, err => {
-    mobGpsActive = false;
-    document.getElementById('mobLocBtn').style.color = '';
-    alert('GPS error: ' + err.message);
-  });
+  if(!navigator.geolocation){ alert('Geolocation tidak didukung browser ini.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat=pos.coords.latitude, lng=pos.coords.longitude;
+    setUserLocation(lat,lng);
+    map.setView([lat,lng],15,{animate:true});
+    document.getElementById('manualLat').value=lat.toFixed(6);
+    document.getElementById('manualLng').value=lng.toFixed(6);
+    const ml=document.getElementById('mobLat'); if(ml) ml.value=lat.toFixed(6);
+    const mln=document.getElementById('mobLng'); if(mln) mln.value=lng.toFixed(6);
+  },()=>alert('Gagal mendapatkan lokasi GPS.'));
 }
 
+/* ── GPS/Go di drawer (input manual mobLat/mobLng) ── */
 function mobGPS(){
-  if(!navigator.geolocation){ alert('Browser tidak support GPS'); return; }
-  navigator.geolocation.getCurrentPosition(pos => {
-    document.getElementById('mobLat').value = pos.coords.latitude.toFixed(6);
-    document.getElementById('mobLng').value = pos.coords.longitude.toFixed(6);
-  }, err => alert('GPS error: ' + err.message));
+  if(!navigator.geolocation){ alert('Geolocation tidak didukung browser ini.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('mobLat').value=pos.coords.latitude.toFixed(6);
+    document.getElementById('mobLng').value=pos.coords.longitude.toFixed(6);
+  },()=>alert('Gagal mendapatkan lokasi GPS.'));
 }
-
 function mobGoLoc(){
-  const lat = parseFloat(document.getElementById('mobLat').value);
-  const lng = parseFloat(document.getElementById('mobLng').value);
-  if(isNaN(lat)||isNaN(lng)){ alert('Koordinat tidak valid'); return; }
-  placeUserMarker(lat, lng);
-  map.setView([lat, lng], 14);
+  const lat=parseFloat(document.getElementById('mobLat').value);
+  const lng=parseFloat(document.getElementById('mobLng').value);
+  if(isNaN(lat)||isNaN(lng)){ alert('Masukkan koordinat yang valid.'); return; }
+  setUserLocation(lat,lng);
+  map.setView([lat,lng],15,{animate:true});
   mobCloseDrawer();
 }
 
-/* ── Close sheet on map tap ── */
-map.on('click', () => {
-  mobCloseSheet();
-  if(isMobile()) document.getElementById('locPopup').classList.remove('open');
-});
+/* ── Tutup sheet saat tap di peta (drawer sudah punya scrim sendiri) ── */
+map.on('click', ()=>{ mobCloseSheet(); });
 
-/* ── Sync: openSitePanel mobile tutup sheet ── */
-const _origOpenSitePanel = openSitePanel;
-window.openSitePanel = function(site, cid){
-  if(isMobile()) mobCloseSheet();
-  _origOpenSitePanel(site, cid);
-};
-
-/* ── Swipe down to close detail panel (mobile) ── */
+/* ── Geser ke bawah untuk tutup detail panel (mobile bottom sheet) ── */
 (function(){
-  const panel = document.getElementById('detailPanel');
-  let startY=0, isDragging=false;
-  panel.addEventListener('touchstart', e => {
-    if(e.target.closest('.panel-body')) return; // allow scroll inside body
-    startY = e.touches[0].clientY;
-    isDragging = true;
-  }, {passive:true});
-  panel.addEventListener('touchmove', e => {
-    if(!isDragging) return;
-    const dy = e.touches[0].clientY - startY;
-    if(dy > 0) panel.style.transform = `translateY(${dy}px)`;
-  }, {passive:true});
-  panel.addEventListener('touchend', e => {
-    if(!isDragging) return;
-    isDragging = false;
-    const dy = e.changedTouches[0].clientY - startY;
-    panel.style.transform = '';
-    if(dy > 80) closeSitePanel();
+  const panel=document.getElementById('detailPanel');
+  let startY=0, dragging=false;
+  panel.addEventListener('touchstart',(ev)=>{
+    if(!isMobileView()) return;
+    if(ev.target.closest('.panel-body')) return; // biarkan scroll konten
+    startY=ev.touches[0].clientY; dragging=true;
+  },{passive:true});
+  panel.addEventListener('touchmove',(ev)=>{
+    if(!dragging) return;
+    const dy=ev.touches[0].clientY-startY;
+    if(dy>0) panel.style.transform=`translateY(${dy}px)`;
+  },{passive:true});
+  panel.addEventListener('touchend',(ev)=>{
+    if(!dragging) return;
+    dragging=false;
+    const dy=(ev.changedTouches[0]?.clientY||0)-startY;
+    panel.style.transform='';
+    if(dy>80) closePanel();
   });
 })();
+
 </script>
+
 </body>
 </html>
