@@ -954,7 +954,60 @@ document.getElementById('basemapSel').addEventListener('change',function(){setBa
 function mobSwitchBasemap(v){setBasemap(v);}
 document.getElementById('themeToggle').addEventListener('change',function(){applyUiTheme(this.checked);});
 document.getElementById('panelClose').addEventListener('click',closePanel);
-document.getElementById('detailPanel').addEventListener('wheel',(ev)=>{ev.stopPropagation();},{passive:true});
+
+/* ── Wheel guard: cegah scroll bocor ke map dari semua panel ──
+   Strategi:
+   - Tangkap wheel event di capture phase (sebelum Leaflet)
+   - Kalau event berasal dari dalam panel:
+     · Cari elemen scrollable terdekat di dalam panel
+     · Scroll elemen itu secara manual (deltaY)
+     · preventDefault() agar Leaflet tidak ikut merespons
+── */
+(function(){
+  const PANEL_SELECTORS = [
+    '#detailPanel',
+    '#msDropdown',
+    '#locPopup',
+    '#legendPanel',
+    '.mob-sheet',
+    '.mob-drawer',
+  ].join(',');
+
+  // Cari ancestor scrollable terdekat dari target
+  function findScrollable(el, deltaY) {
+    while (el && el !== document.body) {
+      const style = window.getComputedStyle(el);
+      const overflow = style.overflowY;
+      const isScrollable = (overflow === 'auto' || overflow === 'scroll');
+      if (isScrollable && el.scrollHeight > el.clientHeight) {
+        const atTop    = el.scrollTop <= 0;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        // Kalau masih bisa scroll ke arah ini, ini targetnya
+        if (!((deltaY < 0 && atTop) || (deltaY > 0 && atBottom))) {
+          return el;
+        }
+      }
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  document.addEventListener('wheel', function(ev){
+    const panel = ev.target.closest(PANEL_SELECTORS);
+    if (!panel) return;
+
+    // Selalu cegah bocor ke map
+    ev.stopPropagation();
+    ev.preventDefault();
+
+    // Scroll elemen scrollable di dalam panel secara manual
+    const scrollable = findScrollable(ev.target, ev.deltaY);
+    if (scrollable) {
+      scrollable.scrollTop += ev.deltaY;
+    }
+  }, { passive: false, capture: true });
+})();
+
 const _panel=document.getElementById('detailPanel');
 _panel.addEventListener('touchstart',(ev)=>{ev.stopPropagation();},{passive:true});
 _panel.addEventListener('touchmove',(ev)=>{ev.stopPropagation();},{passive:true});
