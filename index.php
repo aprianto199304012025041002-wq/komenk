@@ -955,56 +955,72 @@ function mobSwitchBasemap(v){setBasemap(v);}
 document.getElementById('themeToggle').addEventListener('change',function(){applyUiTheme(this.checked);});
 document.getElementById('panelClose').addEventListener('click',closePanel);
 
-/* ── Wheel guard: cegah scroll bocor ke map dari semua panel ──
-   Strategi:
-   - Tangkap wheel event di capture phase (sebelum Leaflet)
-   - Kalau event berasal dari dalam panel:
-     · Cari elemen scrollable terdekat di dalam panel
-     · Scroll elemen itu secara manual (deltaY)
-     · preventDefault() agar Leaflet tidak ikut merespons
+/* ── Wheel guard: cegah zoom map saat scroll dari panel ke peta ──
+   Masalah: mouse berpindah dari panel ke map sambil masih scrolling
+   → momentum terbawa, map ikut zoom.
+   Solusi:
+   1. Scroll di dalam panel → preventDefault agar Leaflet tidak lihat
+   2. Mouse baru keluar dari panel → set cooldown 600ms, selama itu
+      semua wheel event di map di-ignore (zoom tidak terjadi)
+   3. Kalau memang niat zoom dari map (mouse sudah diam dulu di map),
+      baru zoom diizinkan — maksimal 1 step per debounce
 ── */
 (function(){
   const PANEL_SELECTORS = [
-    '#detailPanel',
-    '#msDropdown',
-    '#locPopup',
-    '#legendPanel',
-    '.mob-sheet',
-    '.mob-drawer',
+    '#detailPanel','#msDropdown','#locPopup',
+    '#legendPanel','.mob-sheet','.mob-drawer',
   ].join(',');
 
-  // Cari ancestor scrollable terdekat dari target
-  function findScrollable(el, deltaY) {
+  let inPanel = false;
+  let cooldown = false;
+  let cooldownTimer = null;
+
+  // Cari ancestor scrollable
+  function findScrollable(el, dy) {
     while (el && el !== document.body) {
-      const style = window.getComputedStyle(el);
-      const overflow = style.overflowY;
-      const isScrollable = (overflow === 'auto' || overflow === 'scroll');
-      if (isScrollable && el.scrollHeight > el.clientHeight) {
-        const atTop    = el.scrollTop <= 0;
-        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-        // Kalau masih bisa scroll ke arah ini, ini targetnya
-        if (!((deltaY < 0 && atTop) || (deltaY > 0 && atBottom))) {
-          return el;
-        }
+      const ov = window.getComputedStyle(el).overflowY;
+      if ((ov==='auto'||ov==='scroll') && el.scrollHeight > el.clientHeight) {
+        const atTop = el.scrollTop <= 0;
+        const atBot = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        if (!((dy<0&&atTop)||(dy>0&&atBot))) return el;
       }
       el = el.parentElement;
     }
     return null;
   }
 
+  // Track mouse masuk/keluar panel
+  document.addEventListener('mouseover', function(ev){
+    const wasIn = inPanel;
+    inPanel = !!ev.target.closest(PANEL_SELECTORS);
+    // Mouse baru keluar dari panel → mulai cooldown
+    if (wasIn && !inPanel) {
+      cooldown = true;
+      clearTimeout(cooldownTimer);
+      cooldownTimer = setTimeout(()=>{ cooldown = false; }, 600);
+    }
+  });
+
+  // Wheel handler — capture phase agar jalan sebelum Leaflet
   document.addEventListener('wheel', function(ev){
     const panel = ev.target.closest(PANEL_SELECTORS);
-    if (!panel) return;
 
-    // Selalu cegah bocor ke map
-    ev.stopPropagation();
-    ev.preventDefault();
-
-    // Scroll elemen scrollable di dalam panel secara manual
-    const scrollable = findScrollable(ev.target, ev.deltaY);
-    if (scrollable) {
-      scrollable.scrollTop += ev.deltaY;
+    if (panel) {
+      // Di dalam panel: block map, scroll konten manual
+      ev.stopPropagation();
+      ev.preventDefault();
+      const sc = findScrollable(ev.target, ev.deltaY);
+      if (sc) sc.scrollTop += ev.deltaY;
+      return;
     }
+
+    // Di luar panel tapi masih cooldown → block total
+    if (cooldown) {
+      ev.stopPropagation();
+      ev.preventDefault();
+    }
+    // Kalau tidak cooldown: Leaflet scrollWheelZoom sudah disable,
+    // jadi wheel di map tidak akan zoom — aman dibiarkan
   }, { passive: false, capture: true });
 })();
 
