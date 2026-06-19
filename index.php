@@ -73,7 +73,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:2px;border:1px solid;white-space:nowrap;flex-shrink:0;}
 .chip-caret{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0;margin-left:auto}
 .chip-caret.open{transform:rotate(180deg)}
-.ms-dropdown{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);z-index:700;max-height:260px;overflow-y:auto;display:none;box-shadow:var(--shadow-float);}
+.ms-dropdown{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);z-index:700;max-height:260px;overflow-y:auto;display:none;box-shadow:var(--shadow-float);overscroll-behavior:contain}
 .ms-dropdown.open{display:block}
 .ms-item{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);transition:background .12s;}
 .ms-item:last-child{border-bottom:none}
@@ -123,7 +123,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .compass-btn.rotated{border-color:var(--accent);color:var(--accent)}
 #compassNeedle{display:block;transition:transform .3s ease}
 
-.loc-popup{position:absolute;right:56px;z-index:600;background:var(--surface);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:none;flex-direction:column;gap:8px;min-width:220px;top:calc(var(--topbar-h,12px) + 94px);max-height:50vh;overflow-y:auto;box-shadow:var(--shadow-float);}
+.loc-popup{position:absolute;right:56px;z-index:600;background:var(--surface);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:none;flex-direction:column;gap:8px;min-width:220px;top:calc(var(--topbar-h,12px) + 94px);max-height:50vh;overflow-y:auto;box-shadow:var(--shadow-float);overscroll-behavior:contain}
 .loc-popup.open{display:flex}
 .loc-popup label{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 .loc-popup input{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none;transition:border .15s;}
@@ -147,7 +147,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .legend-caret{font-size:10px;transition:transform .2s}
 .float-legend-btn.active .legend-caret{transform:rotate(180deg)}
 .legend-panel{position:absolute;z-index:605;bottom:calc(90px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:0;overflow:hidden;transition:max-height .28s ease;box-shadow:var(--shadow-float);min-width:140px;}
-.legend-panel.open{max-height:200px;overflow-y:auto}
+.legend-panel.open{max-height:200px;overflow-y:auto;overscroll-behavior:contain}
 .legend-inner{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px 14px}
 .leg-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
 .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -161,7 +161,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .panel-breadcrumb span.active{color:var(--accent)}
 .panel-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;margin-left:auto;transition:color .15s,background .12s;border-radius:4px;}
 .panel-close:hover{color:var(--text);background:var(--surface2)}
-.panel-body{flex:0 1 auto;overflow-y:auto;padding:14px 18px;max-height:calc(60vh - 80px)}
+.panel-body{flex:0 1 auto;overflow-y:auto;padding:14px 18px;max-height:calc(60vh - 80px);overscroll-behavior:contain}
 .panel-body::-webkit-scrollbar{width:4px}
 .panel-body::-webkit-scrollbar-thumb{background:var(--border)}
 
@@ -302,7 +302,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .mob-drawer-head{padding:16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:8px;}
   .mob-drawer-logo{font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:3px}
   .mob-drawer-sub{font-size:9px;color:var(--muted);letter-spacing:1px;line-height:1.4}
-  .mob-drawer-body{flex:1;overflow-y:auto;padding:12px 0}
+  .mob-drawer-body{flex:1;overflow-y:auto;padding:12px 0;overscroll-behavior:contain}
   .mob-drawer-section{padding:0 16px 12px}
   .mob-drawer-label{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;padding:0 0 4px;border-bottom:1px solid var(--border)}
   .mob-drawer-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text);}
@@ -955,7 +955,35 @@ document.getElementById('basemapSel').addEventListener('change',function(){setBa
 function mobSwitchBasemap(v){setBasemap(v);}
 document.getElementById('themeToggle').addEventListener('change',function(){applyUiTheme(this.checked);});
 document.getElementById('panelClose').addEventListener('click',closePanel);
-document.getElementById('detailPanel').addEventListener('wheel',(ev)=>{ev.stopPropagation();},{passive:true});
+document.getElementById('detailPanel').addEventListener('wheel',(ev)=>{ev.stopPropagation();ev.preventDefault();},{passive:false});
+/* ── Block wheel scroll bocor ke map dari semua floating panel ── */
+(function(){
+  // Semua selector yang scrollable dan tidak boleh bocor ke map
+  const BLOCK_SELECTORS = [
+    '#detailPanel', '#msDropdown', '#locPopup',
+    '.mob-drawer', '.mob-sheet', '.legend-panel',
+    '.mob-sheet-list', '.mob-drawer-body', '.panel-body'
+  ];
+  function blockWheel(selector) {
+    // Pakai event delegation di document untuk tangkap elemen yang di-render dinamis
+    document.addEventListener('wheel', function(ev) {
+      const el = ev.target.closest(selector);
+      if (!el) return;
+      // Cek apakah elemen masih bisa di-scroll ke arah delta
+      const atTop    = el.scrollTop <= 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      const scrollingUp   = ev.deltaY < 0;
+      const scrollingDown = ev.deltaY > 0;
+      // Kalau sudah di ujung atas/bawah, block; kalau masih bisa scroll, biarkan
+      if ((scrollingUp && atTop) || (scrollingDown && atBottom) || (el.scrollHeight <= el.clientHeight)) {
+        ev.preventDefault();
+      }
+      ev.stopPropagation();
+    }, { passive: false });
+  }
+  BLOCK_SELECTORS.forEach(blockWheel);
+})();
+
 const _panel=document.getElementById('detailPanel');
 _panel.addEventListener('touchstart',(ev)=>{ev.stopPropagation();},{passive:true});
 _panel.addEventListener('touchmove',(ev)=>{ev.stopPropagation();},{passive:true});
