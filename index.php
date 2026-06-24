@@ -604,6 +604,7 @@ function recalcLayout(){
 const LS = {
   KEY: 'komenk_state',
   save() {
+    if (this._skip) return;
     try {
       localStorage.setItem(this.KEY, JSON.stringify({
         clients: [...selectedIds],
@@ -990,24 +991,36 @@ async function loadClients(){
   buildDropdown();updateChips();
   /* Restore state dari localStorage */
   const saved = LS.load();
+  const _saving = LS._skip = true; // flag: jangan save saat restore
   if (saved.theme) applyUiTheme(saved.theme === 'bright');
   if (saved.basemap) setBasemap(saved.basemap);
+  LS._skip = false;
+
+  const overlay=document.getElementById('stateOverlay');
 
   if (saved.clients && saved.clients.length) {
-    const overlay=document.getElementById('stateOverlay');
-    overlay.style.display='flex';
-    overlay.innerHTML='<div class="spinner"></div><span>Memuat sesi sebelumnya…</span>';
-    const validIds = saved.clients.filter(id => allClients.find(c=>c.clnt_id==id));
+    const validIds = saved.clients.filter(id => allClients.find(c=>+c.clnt_id===+id));
     if (validIds.length) {
-      await Promise.all(validIds.map(id => ensureLoaded(id)));
-      validIds.forEach(id => selectedIds.add(+id));
-      buildDropdown(); updateChips();
-      renderAllVisible(false);
-      return;
+      overlay.style.display='flex';
+      overlay.innerHTML='<div class="spinner"></div><span>Memuat sesi sebelumnya…</span>';
+      try {
+        await Promise.all(validIds.map(id => ensureLoaded(+id)));
+        validIds.forEach(id => selectedIds.add(+id));
+        buildDropdown(); updateChips();
+        renderAllVisible(false);
+        requestAnimationFrame(()=>{ recalcLayout(); });
+        return;
+      } catch(e) {
+        console.warn('Restore gagal, reset state', e);
+        selectedIds.clear();
+        try { localStorage.removeItem(LS.KEY); } catch(_) {}
+      }
     }
   }
 
-  const overlay=document.getElementById('stateOverlay');overlay.style.display='flex';overlay.innerHTML='<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Pilih klien untuk melihat peta</span>';
+  overlay.style.display='flex';
+  overlay.innerHTML='<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Pilih klien untuk melihat peta</span>';
+  requestAnimationFrame(()=>{ recalcLayout(); });
 }
 
 function setLinkVisibility(checked){
