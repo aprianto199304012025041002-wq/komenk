@@ -566,6 +566,26 @@ const BASEMAPS={
   satellite:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',attr:'\u00A9 Esri',sub:'',maxNativeZoom:19}
 };
 let currentBaseTile=null;
+/* ── Persist state ke localStorage ── */
+const LS = {
+  KEY: 'komenk_state',
+  _skip: false,
+  save() {
+    if (this._skip) return;
+    try {
+      // selectedIds dan elements mungkin belum ada saat dipanggil awal
+      const ids = typeof selectedIds !== 'undefined' ? [...selectedIds] : [];
+      const bm = document.getElementById('basemapSel')?.value || 'dark';
+      const th = document.documentElement.getAttribute('data-theme') || 'dark';
+      localStorage.setItem(this.KEY, JSON.stringify({clients:ids,basemap:bm,theme:th}));
+    } catch(e) {}
+  },
+  load() {
+    try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; }
+    catch(e) { return {}; }
+  }
+};
+
 function setBasemap(key){
   if(currentBaseTile) map.removeLayer(currentBaseTile);
   const b=BASEMAPS[key]||BASEMAPS.dark;
@@ -595,29 +615,22 @@ function mobSwitchTheme(isBright){
 
 
 function recalcLayout(){
-  const logo=document.getElementById('floatLogo');const ctrl=document.getElementById('floatControls');
+  const logo=document.getElementById('floatLogo');
+  const ctrl=document.getElementById('floatControls');
   if(!logo||!ctrl)return;
-  if(window.innerWidth>=769){const r=logo.getBoundingClientRect();ctrl.style.top='12px';ctrl.style.left=(r.right+8)+'px';}
-}
-
-/* ── Persist state ke localStorage ── */
-const LS = {
-  KEY: 'komenk_state',
-  save() {
-    if (this._skip) return;
-    try {
-      localStorage.setItem(this.KEY, JSON.stringify({
-        clients: [...selectedIds],
-        basemap: document.getElementById('basemapSel')?.value || 'dark',
-        theme: document.documentElement.getAttribute('data-theme') || 'dark'
-      }));
-    } catch(e) {}
-  },
-  load() {
-    try { return JSON.parse(localStorage.getItem(this.KEY)) || {}; }
-    catch(e) { return {}; }
+  if(window.innerWidth>=769){
+    // Reset dulu agar measurement akurat
+    ctrl.style.left='';
+    const r=logo.getBoundingClientRect();
+    if(r.width>0){
+      ctrl.style.top='12px';
+      ctrl.style.left=(r.right+8)+'px';
+    }
+  } else {
+    ctrl.style.left='';
+    ctrl.style.top='';
   }
-};
+}
 
 let allClients=[],selectedIds=new Set(),mapLayers=L.layerGroup().addTo(map);
 const edgeCanvas=document.createElement('canvas');
@@ -1069,7 +1082,14 @@ document.addEventListener('click',(e)=>{if(!e.target.closest('#locBtn')&&!e.targ
 window.addEventListener('beforeunload',()=>{ LS.save(); });
 window.addEventListener("resize",()=>{repositionZoom();updateChips();recalcLayout();});
 window.addEventListener("orientationchange",()=>{setTimeout(()=>{repositionZoom();updateChips();recalcLayout();},150);});
-requestAnimationFrame(()=>{repositionZoom();recalcLayout();setTimeout(()=>{repositionZoom();recalcLayout();},300);});
+requestAnimationFrame(()=>{
+  repositionZoom();recalcLayout();
+  // Ulangi setelah font Google Fonts selesai load
+  setTimeout(()=>{repositionZoom();recalcLayout();},300);
+  setTimeout(()=>{repositionZoom();recalcLayout();},800);
+});
+// Fallback: font load event
+if(document.fonts){document.fonts.ready.then(()=>recalcLayout());}
 loadClients();
 
 /* ══ MOBILE JS ══ */
