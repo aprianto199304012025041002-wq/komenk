@@ -246,6 +246,19 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .float-stats{display:none!important}
   .float-legend-btn{display:none!important}
   .legend-panel{display:none!important}
+
+  /* Legend desktop: panel kecil kiri bawah, selalu terlihat kalau ada klien aktif */
+  .desktop-legend{
+    display:none;position:absolute;left:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom,0));
+    z-index:600;background:var(--glass);backdrop-filter:blur(10px);
+    border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow-float);min-width:220px;max-width:280px;
+    padding:10px 12px;
+  }
+  .desktop-legend.show{display:block}
+  .desktop-legend .leg-row{padding:4px 0}
+  .desktop-legend-title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
   .detail-panel{position:absolute;top:0;right:0;bottom:0;left:auto;width:510px;max-height:100dvh;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);border-top:none;border-left:2px solid var(--border);border-radius:0;z-index:1000;}
   .detail-panel.open{transform:translateX(0)}
   .panel-body{max-height:calc(100dvh - 140px)}
@@ -472,6 +485,12 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   </button>
   <div class="legend-panel" id="legendPanel">
     <div class="legend-inner" id="legendInner"></div>
+  </div>
+
+  <!-- Legend desktop: selalu tampil di kiri bawah saat ada klien aktif -->
+  <div class="desktop-legend" id="desktopLegend">
+    <div class="desktop-legend-title">Status ISR per klien</div>
+    <div id="desktopLegendInner"></div>
   </div>
 
   <!-- ══ MOBILE ══ -->
@@ -871,27 +890,34 @@ function renderStatBar(stats){
 
 function updateLegend(){
   const activeIds=[...selectedIds];
+
+  // Renderer bersama untuk semua tempat legend muncul
+  const renderRows = (rowClass, dotClass) => activeIds.map(id=>{
+    const c=allClients.find(x=>x.clnt_id==id);
+    const col=clientColorMap[id]||'#00e5ff';
+    const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+    const stats=getClientExpiryStats(id);
+    return `<div class="${rowClass}"><div class="${dotClass}" style="background:${col}"></div><span style="flex:1">${esc(name)}</span>${renderStatBar(stats)}</div>`;
+  }).join('');
+
+  // 1) Legend mobile (bottom-sheet, toggle via tombol Legenda)
   const legendInner=document.getElementById('legendInner');
-  if(legendInner){
-    legendInner.innerHTML=activeIds.map(id=>{
-      const c=allClients.find(x=>x.clnt_id==id);
-      const col=clientColorMap[id]||'#00e5ff';
-      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
-      const stats=getClientExpiryStats(id);
-      return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div><span>${esc(name)}</span>${renderStatBar(stats)}</div>`;
-    }).join('');
-  }
+  if(legendInner) legendInner.innerHTML = renderRows('leg-row','leg-dot');
+
+  // 2) Legend drawer mobile (di dalam menu hamburger)
   const mobWrap=document.getElementById('mobDrawerLegend');
   const mobInner=document.getElementById('mobLegendItems');
   if(mobWrap&&mobInner){
     mobWrap.style.display=activeIds.length?'':'none';
-    mobInner.innerHTML=activeIds.map(id=>{
-      const c=allClients.find(x=>x.clnt_id==id);
-      const col=clientColorMap[id]||'#00e5ff';
-      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
-      const stats=getClientExpiryStats(id);
-      return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div><span style="flex:1">${esc(name)}</span>${renderStatBar(stats)}</div>`;
-    }).join('');
+    mobInner.innerHTML = renderRows('mob-legend-row','mob-legend-dot');
+  }
+
+  // 3) Legend desktop: panel selalu tampil kiri bawah saat ada klien aktif
+  const dskWrap=document.getElementById('desktopLegend');
+  const dskInner=document.getElementById('desktopLegendInner');
+  if(dskWrap&&dskInner){
+    dskWrap.classList.toggle('show', activeIds.length>0);
+    dskInner.innerHTML = renderRows('leg-row','leg-dot');
   }
 }
 
