@@ -155,13 +155,35 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .legend-panel{position:absolute;z-index:605;bottom:calc(90px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:0;overflow:hidden;transition:max-height .28s ease;box-shadow:var(--shadow-float);min-width:140px;}
 .legend-panel.open{max-height:200px;overflow-y:auto;overscroll-behavior:contain}
 .legend-inner{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px 14px}
-.leg-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:3px 0}
-.leg-statbar{display:flex;height:5px;width:46px;border-radius:3px;overflow:hidden;background:var(--border);flex-shrink:0}
+.leg-row{
+  display:grid;
+  grid-template-columns:8px 1fr 60px 36px;
+  align-items:center;
+  gap:8px;
+  font-size:11px;
+  color:var(--text);
+  padding:5px 0;
+}
+.leg-row+.leg-row{border-top:1px solid rgba(255,255,255,.03)}
+.leg-row .leg-name{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+  letter-spacing:.1px;
+}
+.leg-statbar{
+  display:flex;height:5px;width:100%;border-radius:3px;
+  overflow:hidden;background:var(--border);flex-shrink:0;
+}
 .leg-statbar-seg{height:100%}
 .leg-statbar-seg.active{background:var(--green)}
 .leg-statbar-seg.soon{background:var(--yellow)}
 .leg-statbar-seg.expired{background:var(--red)}
-.leg-stat-count{font-family:var(--mono);font-size:9px;color:var(--muted);white-space:nowrap}
+.leg-stat-count{
+  font-family:var(--mono);font-size:9.5px;color:var(--muted);
+  white-space:nowrap;text-align:right;
+}
 .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
 .detail-panel{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:2px solid var(--border);box-shadow:0 -4px 24px rgba(0,0,0,.35);max-height:60vh;height:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:1000;display:flex;flex-direction:column}
@@ -253,12 +275,29 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
     bottom:calc(12px + env(safe-area-inset-bottom,0));
     z-index:600;background:var(--glass);backdrop-filter:blur(10px);
     border:1px solid var(--border);border-radius:var(--radius);
-    box-shadow:var(--shadow-float);min-width:220px;max-width:280px;
-    padding:10px 12px;
+    box-shadow:var(--shadow-float);width:300px;
+    max-height:min(420px, calc(100dvh - 140px));
+    display:none;flex-direction:column;
+    overflow:hidden;
   }
-  .desktop-legend.show{display:block}
-  .desktop-legend .leg-row{padding:4px 0}
-  .desktop-legend-title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .desktop-legend.show{display:flex}
+  .desktop-legend-title{
+    font-family:var(--mono);font-size:10px;color:var(--accent);
+    letter-spacing:1.2px;text-transform:uppercase;
+    padding:10px 14px;border-bottom:1px solid var(--border);
+    flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  }
+  .desktop-legend-count{
+    font-family:var(--mono);font-size:9px;color:var(--muted);
+    background:var(--surface2);padding:1px 6px;border-radius:10px;
+  }
+  .desktop-legend-body{
+    overflow-y:auto;overscroll-behavior:contain;
+    padding:6px 14px;
+  }
+  .desktop-legend-body::-webkit-scrollbar{width:4px}
+  .desktop-legend-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .desktop-legend .leg-row{grid-template-columns:8px 1fr 64px 38px}
   .detail-panel{position:absolute;top:0;right:0;bottom:0;left:auto;width:510px;max-height:100dvh;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);border-top:none;border-left:2px solid var(--border);border-radius:0;z-index:1000;}
   .detail-panel.open{transform:translateX(0)}
   .panel-body{max-height:calc(100dvh - 140px)}
@@ -342,9 +381,14 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .mob-drawer-select option{background:var(--surface)}
   .mob-drawer-legend{padding:0 16px 12px}
   .mob-legend-items{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-  .mob-legend-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:4px 0}
-.mob-legend-row .leg-statbar{width:54px;height:6px}
-.mob-legend-row .leg-stat-count{font-size:10px}
+  .mob-legend-row{
+    display:grid;grid-template-columns:9px 1fr 60px 38px;
+    align-items:center;gap:8px;font-size:12px;color:var(--text);padding:6px 0;
+  }
+  .mob-legend-row+.mob-legend-row{border-top:1px solid rgba(255,255,255,.04)}
+  .mob-legend-row .leg-name{font-size:12px}
+  .mob-legend-row .leg-statbar{height:6px}
+  .mob-legend-row .leg-stat-count{font-size:10px}
   .mob-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .mob-loc-section{padding:0 16px 12px}
   .mob-loc-input{display:flex;flex-direction:column;gap:6px;margin-top:6px}
@@ -489,8 +533,11 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 
   <!-- Legend desktop: selalu tampil di kiri bawah saat ada klien aktif -->
   <div class="desktop-legend" id="desktopLegend">
-    <div class="desktop-legend-title">Status ISR per klien</div>
-    <div id="desktopLegendInner"></div>
+    <div class="desktop-legend-title">
+      <span>Status ISR per klien</span>
+      <span class="desktop-legend-count" id="desktopLegendCount">0</span>
+    </div>
+    <div class="desktop-legend-body" id="desktopLegendInner"></div>
   </div>
 
   <!-- ══ MOBILE ══ -->
@@ -891,13 +938,15 @@ function renderStatBar(stats){
 function updateLegend(){
   const activeIds=[...selectedIds];
 
-  // Renderer bersama untuk semua tempat legend muncul
+  // Renderer bersama untuk semua tempat legend muncul.
+  // Nama lengkap disimpan di title="" untuk tooltip saat nama dipotong ellipsis.
   const renderRows = (rowClass, dotClass) => activeIds.map(id=>{
     const c=allClients.find(x=>x.clnt_id==id);
     const col=clientColorMap[id]||'#00e5ff';
-    const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+    const fullName=c?c.clnt_name.split(',')[0]:String(id);
+    const shortName=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
     const stats=getClientExpiryStats(id);
-    return `<div class="${rowClass}"><div class="${dotClass}" style="background:${col}"></div><span style="flex:1">${esc(name)}</span>${renderStatBar(stats)}</div>`;
+    return `<div class="${rowClass}"><div class="${dotClass}" style="background:${col}"></div><span class="leg-name" title="${esc(fullName)}">${esc(shortName)}</span>${renderStatBar(stats)}</div>`;
   }).join('');
 
   // 1) Legend mobile (bottom-sheet, toggle via tombol Legenda)
@@ -915,9 +964,11 @@ function updateLegend(){
   // 3) Legend desktop: panel selalu tampil kiri bawah saat ada klien aktif
   const dskWrap=document.getElementById('desktopLegend');
   const dskInner=document.getElementById('desktopLegendInner');
+  const dskCount=document.getElementById('desktopLegendCount');
   if(dskWrap&&dskInner){
     dskWrap.classList.toggle('show', activeIds.length>0);
     dskInner.innerHTML = renderRows('leg-row','leg-dot');
+    if(dskCount) dskCount.textContent = activeIds.length + (activeIds.length===1?' klien':' klien');
   }
 }
 
