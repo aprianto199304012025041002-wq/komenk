@@ -73,8 +73,14 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:2px;border:1px solid;white-space:nowrap;flex-shrink:0;}
 .chip-caret{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0;margin-left:auto}
 .chip-caret.open{transform:rotate(180deg)}
-.ms-dropdown{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);z-index:700;max-height:260px;overflow-y:auto;display:none;box-shadow:var(--shadow-float);overscroll-behavior:contain}
-.ms-dropdown.open{display:block}
+.ms-dropdown{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);z-index:700;max-height:300px;display:none;box-shadow:var(--shadow-float);overflow:hidden;display:none;flex-direction:column;}
+.ms-dropdown.open{display:flex}
+.ms-search-wrap{padding:8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ms-search-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;padding:6px 10px;outline:none;font-family:var(--sans);transition:border-color .15s}
+.ms-search-input:focus{border-color:var(--accent)}
+.ms-search-input::placeholder{color:var(--muted)}
+.ms-list-scroll{overflow-y:auto;overscroll-behavior:contain;max-height:250px}
+.ms-no-result{padding:16px 12px;text-align:center;color:var(--muted);font-size:12px}
 .ms-item{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);transition:background .12s;}
 .ms-item:last-child{border-bottom:none}
 .ms-item:hover{background:var(--surface2)}
@@ -884,7 +890,7 @@ function showSitePanel(site){
         const statusCls={AKTIF:'good','KADALUARSA':'danger','SEGERA HABIS':'warn'}[statusSimf]||'';
         const infoBar=`<div class="link-info-bar"><div class="info-chip"><span class="info-chip-label">Azimuth</span><span class="info-chip-val">${mw.azim!=null?mw.azim+'\u00B0':'\u2014'}</span></div><div class="info-chip"><span class="info-chip-label">Jarak</span><span class="info-chip-val">${(cs.lat&&cs.lng&&partner.lat&&partner.lng)?((haversineM(cs.lat,cs.lng,partner.lat,partner.lng)/1000).toFixed(2)+' km'):'\u2014'}</span></div><div class="info-chip"><span class="info-chip-label">Status ISR</span><span class="info-chip-val ${statusCls}">${esc(statusSimf)}</span></div><div class="info-chip"><span class="info-chip-label">Berlaku s.d.</span><span class="info-chip-val ${expStatus(mw.validity)==='expired'?'danger':expStatus(mw.validity)==='soon'?'warn':''}">${esc(mw.validity)||'\u2014'}</span></div></div>`;
         const antSpecs=`<div class="ant-specs"><div class="ant-half"><div class="ant-half-label">Antena</div><div class="ant-row"><span class="ant-key">H-ASL</span><span class="ant-val">${mw.h_asl!=null?mw.h_asl+' m':'\u2014'}</span></div><div class="ant-row"><span class="ant-key">Tinggi ant.</span><span class="ant-val">${mw.hgt_ant!=null?mw.hgt_ant+' m':'\u2014'}</span></div><div class="ant-row"><span class="ant-key">ERP</span><span class="ant-val">${mw.erp!=null?mw.erp+' dBm':'\u2014'}</span></div></div><div class="ant-half"><div class="ant-half-label">Perangkat</div><div class="ant-row"><span class="ant-key">Mfr</span><span class="ant-val">${esc(mw.eq_mfr)||'\u2014'}</span></div><div class="ant-row"><span class="ant-key">Model</span><span class="ant-val">${esc(mw.eq_mdl)||'\u2014'}</span></div><div class="ant-row"><span class="ant-key">Trans</span><span class="ant-val">${esc(mw.trans_type)||'\u2014'}</span></div></div></div>`;
-        const extraGrid=[mw.licence_date?`<span class="k">Tgl. Lisensi</span><span class="v">${esc(mw.licence_date)}</span>`:'',mw.appl_date?`<span class="k">Tgl. Daftar</span><span class="v">${esc(mw.appl_date)}</span>`:'',mw.umur_isr?`<span class="k">Umur ISR</span><span class="v">${esc(mw.umur_isr)}</span>`:'`',(mw.city||mw.province)?`<span class="k">Lokasi</span><span class="v">${esc([mw.city,mw.province].filter(Boolean).join(', '))}</span>`:''].filter(Boolean).join('');
+        const extraGrid=[mw.licence_date?`<span class="k">Tgl. Lisensi</span><span class="v">${esc(mw.licence_date)}</span>`:'',mw.appl_date?`<span class="k">Tgl. Daftar</span><span class="v">${esc(mw.appl_date)}</span>`:'',mw.umur_isr?`<span class="k">Umur ISR</span><span class="v">${esc(mw.umur_isr)}</span>`:'',(mw.city||mw.province)?`<span class="k">Lokasi</span><span class="v">${esc([mw.city,mw.province].filter(Boolean).join(', '))}</span>`:''].filter(Boolean).join('');
         return `<div class="link-row" id="mwi-${mid}"><div class="link-id-row" onclick="toggleMWLink('${mid}','${safeEid}','${partner.id}')"><span class="link-badge" style="color:${col};background:${col}18;border-color:${col}40">LINK ID \u00B7 ${esc(mw.link_id)||'\u2014'}</span><i class="mw-chevron" id="mwc-${mid}" style="margin-left:auto;color:var(--muted);font-size:13px">&#9660;</i></div><div class="isr-pair-grid"><div class="isr-half"><div class="isr-half-label">Stasiun asal</div><div class="isr-half-stn">${esc(asalData.stn)}</div><div class="isr-half-simf">${esc(asalData.simf)}<button class="copy-btn" data-copy="${asalData.simf}" title="Salin SIMF">⎘</button></div><div class="isr-half-freq"><span class="pill-tx">TX</span> ${asalData.freqTx}</div><div class="isr-half-freq"><span class="pill-rx">RX</span> ${asalData.freqRx}</div></div><div class="isr-half"><div class="isr-half-label">Stasiun lawan</div><div class="isr-half-stn">${esc(lawanData.stn)}</div><div class="isr-half-simf">${esc(lawanData.simf)}<button class="copy-btn" data-copy="${lawanData.simf}" title="Salin SIMF">⎘</button></div><div class="isr-half-freq"><span class="pill-tx">TX</span> ${lawanData.freqTx}</div><div class="isr-half-freq"><span class="pill-rx">RX</span> ${lawanData.freqRx}</div></div></div>${infoBar}${antSpecs}${extraGrid?`<div class="mw-extra-grid">${extraGrid}</div>`:''}<div class="mwlink-detail" id="mwd-${mid}">${!e.ghost?`<button class="goto-btn" onclick="gotoSite('${partner.id}')">\u2192 Lihat site lawan: ${esc(partner.label)}</button>`:''}</div></div>`;
       }).join('');
       const isFirst=ei===0;return `<div class="lawan-group" id="${gid}"><div class="lawan-header" onclick="toggleLawanGroup('${gid}')"><div class="lawan-dot ${e.ghost?'ghost':''}" style="background:${partnerColor}"></div><div class="lawan-name">${esc(partner.label)}</div><span class="lawan-count">${e.mwlinks.length} link</span><span class="lawan-chevron${isFirst?' open':''}" >&#9660;</span></div><div class="lawan-links" id="${gid}-links" style="display:${isFirst?'flex':'none'}">${linksHtml}</div></div>`;
@@ -937,12 +943,63 @@ function toggleDropdown(){const dd=document.getElementById('msDropdown');const c
 function closeDropdownAll(){document.getElementById('msDropdown').classList.remove('open');document.getElementById('chipCaret').classList.remove('open');document.getElementById('msTrigger').classList.remove('open');document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');}
 document.addEventListener('click',e=>{if(!e.target.closest('#msTrigger')&&!e.target.closest('#msDropdown')&&!e.target.closest('#legendBtn')&&!e.target.closest('#legendPanel')&&!e.target.closest('#locBtn')&&!e.target.closest('#locPopup')){closeDropdownAll();}});
 
-function buildDropdown(){
-  const dd=document.getElementById('msDropdown');const mobList=document.getElementById('mobSheetList');const wasOpen=dd.classList.contains('open');
+function renderClientItem(c){
+  const color=clientColorMap[c.clnt_id]||'#00e5ff';const sel=selectedIds.has(+c.clnt_id);
+  return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.clnt_id})" data-name="${esc(c.clnt_name.toLowerCase())}"><div class="ms-check"><span class="ms-check-mark">\u2713</span></div><div class="ms-dot" style="background:${color}"></div><div class="ms-name">${esc(c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '))}</div><div class="ms-stats"><span class="ms-stat-chip">${c.total_isr} ISR</span><span class="ms-stat-chip">${c.total_link} MW</span></div></div>`;
+}
+
+function renderAllItem(){
   const isAllSelected=selectedIds.size===allClients.length;
-  const allItem=`<div class="ms-item${isAllSelected?' selected':''}" onclick="toggleClient('__all__')"><div class="ms-check"><span class="ms-check-mark">\u2713</span></div><div class="ms-name" style="color:var(--accent);font-weight:500">Semua klien</div><span class="ms-count">${allClients.reduce((s,c)=>s+(+c.total_isr),0)} ISR</span></div>`;
-  const items=allClients.map((c)=>{const color=clientColorMap[c.clnt_id]||'#00e5ff';const sel=selectedIds.has(+c.clnt_id);return `<div class="ms-item${sel?' selected':''}" onclick="toggleClient(${c.clnt_id})"><div class="ms-check"><span class="ms-check-mark">\u2713</span></div><div class="ms-dot" style="background:${color}"></div><div class="ms-name">${esc(c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '))}</div><div class="ms-stats"><span class="ms-stat-chip">${c.total_isr} ISR</span><span class="ms-stat-chip">${c.total_link} MW</span></div></div>`;}).join('');
-  dd.innerHTML=allItem+items;if(wasOpen)dd.classList.add('open');if(mobList)mobList.innerHTML=allItem+items;
+  return `<div class="ms-item${isAllSelected?' selected':''}" onclick="toggleClient('__all__')" data-name="semua klien"><div class="ms-check"><span class="ms-check-mark">\u2713</span></div><div class="ms-name" style="color:var(--accent);font-weight:500">Semua klien</div><span class="ms-count">${allClients.reduce((s,c)=>s+(+c.total_isr),0)} ISR</span></div>`;
+}
+
+function buildDropdown(){
+  const dd=document.getElementById('msDropdown');
+  const mobList=document.getElementById('mobSheetList');
+  const wasOpen=dd.classList.contains('open');
+  const allItem=renderAllItem();
+  const items=allClients.map(renderClientItem).join('');
+
+  // Simpan query search yang sedang aktif, supaya tidak reset saat re-render
+  const prevDesktopQuery = document.getElementById('msSearchInput')?.value || '';
+  const prevMobQuery = document.getElementById('mobSearchInput')?.value || '';
+
+  // Desktop dropdown: search input + scrollable list
+  dd.innerHTML=`<div class="ms-search-wrap"><input type="text" class="ms-search-input" id="msSearchInput" placeholder="Cari klien\u2026" oninput="filterClientList(this.value,'msList')" value="${esc(prevDesktopQuery)}"></div><div class="ms-list-scroll" id="msList">${allItem}${items}</div>`;
+  if(wasOpen)dd.classList.add('open');
+  if(prevDesktopQuery) filterClientList(prevDesktopQuery, 'msList');
+
+  // Mobile sheet: search input + list
+  if(mobList){
+    mobList.innerHTML=`<div class="ms-search-wrap"><input type="text" class="ms-search-input" id="mobSearchInput" placeholder="Cari klien\u2026" oninput="filterClientList(this.value,'mobList')" value="${esc(prevMobQuery)}"></div><div id="mobListItems">${allItem}${items}</div>`;
+    if(prevMobQuery) filterClientList(prevMobQuery, 'mobList');
+  }
+}
+
+function filterClientList(query, containerId){
+  const container = containerId==='msList' ? document.getElementById('msList') : document.getElementById('mobListItems');
+  if(!container) return;
+  const q = query.trim().toLowerCase();
+  const items = container.querySelectorAll('.ms-item');
+  let visibleCount = 0;
+  items.forEach(el=>{
+    const name = el.dataset.name || '';
+    const match = !q || name.includes(q);
+    el.style.display = match ? '' : 'none';
+    if(match) visibleCount++;
+  });
+  // Tampilkan pesan kalau tidak ada hasil
+  let noResult = container.querySelector('.ms-no-result');
+  if(visibleCount===0){
+    if(!noResult){
+      noResult=document.createElement('div');
+      noResult.className='ms-no-result';
+      noResult.textContent='Klien tidak ditemukan';
+      container.appendChild(noResult);
+    }
+  } else if(noResult){
+    noResult.remove();
+  }
 }
 
 /* ── updateChips: 0=placeholder, 1=nama klien, >1=jumlah, semua=Semua klien ── */
