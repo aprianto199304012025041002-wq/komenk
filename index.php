@@ -155,7 +155,13 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .legend-panel{position:absolute;z-index:605;bottom:calc(90px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:0;overflow:hidden;transition:max-height .28s ease;box-shadow:var(--shadow-float);min-width:140px;}
 .legend-panel.open{max-height:200px;overflow-y:auto;overscroll-behavior:contain}
 .legend-inner{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px 14px}
-.leg-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:3px 0}
+.leg-statbar{display:flex;height:5px;width:46px;border-radius:3px;overflow:hidden;background:var(--border);flex-shrink:0}
+.leg-statbar-seg{height:100%}
+.leg-statbar-seg.active{background:var(--green)}
+.leg-statbar-seg.soon{background:var(--yellow)}
+.leg-statbar-seg.expired{background:var(--red)}
+.leg-stat-count{font-family:var(--mono);font-size:9px;color:var(--muted);white-space:nowrap}
 .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
 .detail-panel{position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:2px solid var(--border);box-shadow:0 -4px 24px rgba(0,0,0,.35);max-height:60vh;height:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:1000;display:flex;flex-direction:column}
@@ -323,7 +329,9 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .mob-drawer-select option{background:var(--surface)}
   .mob-drawer-legend{padding:0 16px 12px}
   .mob-legend-items{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-  .mob-legend-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .mob-legend-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:4px 0}
+.mob-legend-row .leg-statbar{width:54px;height:6px}
+.mob-legend-row .leg-stat-count{font-size:10px}
   .mob-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
   .mob-loc-section{padding:0 16px 12px}
   .mob-loc-input{display:flex;flex-direction:column;gap:6px;margin-top:6px}
@@ -710,7 +718,7 @@ function assignClientColor(name){
 }
 
 const M={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
-function expStatus(d){if(!d)return 'unknown';const p=d.split('-');if(p.length<3)return 'unknown';const dt=new Date(+p[2],M[p[1]?.toUpperCase()]??0,+p[0]);const diff=(dt-new Date())/86400000;return diff<0?'expired':diff<180?'soon':'active';}
+function expStatus(d){if(!d)return 'unknown';const p=d.split('-');if(p.length<3)return 'unknown';let yr=+p[2];if(yr<100)yr+=yr<70?2000:1900;const dt=new Date(yr,M[p[1]?.toUpperCase()]??0,+p[0]);const diff=(dt-new Date())/86400000;return diff<0?'expired':diff<180?'soon':'active';}
 function fmtFreq(v){return v!=null?v+' MHz':'\u2014';}
 function esc(s){if(s==null)return '';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dmsToDecimal(deg,min,sec,dir){if(deg==null||deg===''||deg===undefined)return null;const d=parseFloat(deg);if(isNaN(d))return null;const m=parseFloat(min)||0;const s=parseFloat(sec)||0;if(d===0&&m===0&&s===0)return null;let dd=d+m/60+s/3600;if(dir==='S'||dir==='W')dd=-dd;return isNaN(dd)?null:dd;}
@@ -831,10 +839,60 @@ map.on('moveend zoomend',refreshMarkers);
 function showSkeletonForClient(clntId){skeletonLayer.clearLayers();const color=clientColorMap[clntId]||'#00e5ff';const bounds=map.getBounds();const sw=bounds.getSouthWest(),ne=bounds.getNorthEast();const latSpan=ne.lat-sw.lat,lngSpan=ne.lng-sw.lng;const positions=[[sw.lat+latSpan*.25,sw.lng+lngSpan*.25],[sw.lat+latSpan*.25,sw.lng+lngSpan*.65],[sw.lat+latSpan*.5,sw.lng+lngSpan*.45],[sw.lat+latSpan*.65,sw.lng+lngSpan*.2],[sw.lat+latSpan*.7,sw.lng+lngSpan*.7],[sw.lat+latSpan*.4,sw.lng+lngSpan*.8]];positions.forEach(([lat,lng])=>{const icon=L.divIcon({html:`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" class="hex-skeleton"><polygon points="13,2 22,7.5 22,18.5 13,24 4,18.5 4,7.5" fill="${color}" fill-opacity=".15" stroke="${color}" stroke-width="1.5" stroke-dasharray="4 2.5" stroke-linejoin="round"/></svg>`,className:'',iconSize:[26,26],iconAnchor:[13,13]});L.marker([lat,lng],{icon,interactive:false,zIndexOffset:-500}).addTo(skeletonLayer);});}
 function clearSkeleton(){skeletonLayer.clearLayers();}
 
+/* Hitung statistik aktif/segera-habis/expired dari semua MW link milik 1 klien */
+function getClientExpiryStats(clntId){
+  const data = allLayersData[clntId];
+  if(!data || !data.edges) return null;
+  let active=0, soon=0, expired=0, unknown=0;
+  data.edges.forEach(e=>{
+    e.mwlinks.forEach(mw=>{
+      const s = expStatus(mw.validity);
+      if(s==='active') active++;
+      else if(s==='soon') soon++;
+      else if(s==='expired') expired++;
+      else unknown++;
+    });
+  });
+  const total = active+soon+expired+unknown;
+  if(total===0) return null;
+  return {active,soon,expired,unknown,total};
+}
+
+function renderStatBar(stats){
+  if(!stats || stats.total===0) return '';
+  const pct = (n)=> (n/stats.total*100).toFixed(1);
+  const segs = [
+    stats.active  ? `<div class="leg-statbar-seg active"  style="width:${pct(stats.active)}%"  title="${stats.active} Aktif"></div>`  : '',
+    stats.soon    ? `<div class="leg-statbar-seg soon"    style="width:${pct(stats.soon)}%"    title="${stats.soon} Segera Habis"></div>` : '',
+    stats.expired ? `<div class="leg-statbar-seg expired" style="width:${pct(stats.expired)}%" title="${stats.expired} Kadaluarsa"></div>` : '',
+  ].join('');
+  return `<div class="leg-statbar">${segs}</div><span class="leg-stat-count">${stats.active}/${stats.total}</span>`;
+}
+
 function updateLegend(){
   const activeIds=[...selectedIds];
-  const legendInner=document.getElementById('legendInner');if(legendInner){legendInner.innerHTML=activeIds.map(id=>{const c=allClients.find(x=>x.clnt_id==id);const col=clientColorMap[id]||'#00e5ff';const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div><span>${esc(name)}</span></div>`;}).join('');}
-  const mobWrap=document.getElementById('mobDrawerLegend');const mobInner=document.getElementById('mobLegendItems');if(mobWrap&&mobInner){mobWrap.style.display=activeIds.length?'':'none';mobInner.innerHTML=activeIds.map(id=>{const c=allClients.find(x=>x.clnt_id==id);const col=clientColorMap[id]||'#00e5ff';const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div>${esc(name)}</div>`;}).join('');}
+  const legendInner=document.getElementById('legendInner');
+  if(legendInner){
+    legendInner.innerHTML=activeIds.map(id=>{
+      const c=allClients.find(x=>x.clnt_id==id);
+      const col=clientColorMap[id]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+      const stats=getClientExpiryStats(id);
+      return `<div class="leg-row"><div class="leg-dot" style="background:${col}"></div><span>${esc(name)}</span>${renderStatBar(stats)}</div>`;
+    }).join('');
+  }
+  const mobWrap=document.getElementById('mobDrawerLegend');
+  const mobInner=document.getElementById('mobLegendItems');
+  if(mobWrap&&mobInner){
+    mobWrap.style.display=activeIds.length?'':'none';
+    mobInner.innerHTML=activeIds.map(id=>{
+      const c=allClients.find(x=>x.clnt_id==id);
+      const col=clientColorMap[id]||'#00e5ff';
+      const name=c?c.clnt_name.split(',')[0].split(' ').slice(0,2).join(' '):id;
+      const stats=getClientExpiryStats(id);
+      return `<div class="mob-legend-row"><div class="mob-legend-dot" style="background:${col}"></div><span style="flex:1">${esc(name)}</span>${renderStatBar(stats)}</div>`;
+    }).join('');
+  }
 }
 
 function updateLinkLabels(activeSiteId){
