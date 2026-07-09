@@ -67,6 +67,60 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 [data-theme="bright"] input:checked+.tog-s:before{background:var(--accent)}
 
 .float-selector{display:none}
+
+/* ── Filter wilayah ── */
+.filter-wrap{position:relative}
+.filter-trigger{
+  background:var(--glass);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:4px 10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-size:11px;color:var(--text);transition:border .15s;
+  box-shadow:var(--shadow-float);min-width:130px;height:32px;
+}
+.filter-trigger:hover,.filter-trigger.open{border-color:var(--accent)}
+.filter-trigger.active{border-color:var(--accent2);color:var(--accent2)}
+.filter-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.filter-caret{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.filter-caret.open{transform:rotate(180deg)}
+.filter-clear{font-size:12px;color:var(--muted);cursor:pointer;transition:color .12s;flex-shrink:0;display:none;line-height:1;padding:0 1px}
+.filter-trigger.active .filter-clear{display:block}
+.filter-clear:hover{color:var(--red)}
+.filter-dropdown{
+  position:absolute;top:calc(100% + 4px);left:0;min-width:250px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  z-index:710;display:none;flex-direction:column;
+  box-shadow:var(--shadow-float);max-height:320px;overflow:hidden;
+}
+.filter-dropdown.open{display:flex}
+.filter-search-wrap{padding:8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.filter-search-input{
+  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  color:var(--text);font-size:12px;padding:6px 10px;outline:none;
+  font-family:var(--sans);transition:border-color .15s;
+}
+.filter-search-input:focus{border-color:var(--accent)}
+.filter-search-input::placeholder{color:var(--muted)}
+.filter-list{overflow-y:auto;overscroll-behavior:contain;flex:1}
+.filter-item{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);transition:background .12s;
+}
+.filter-item:last-child{border-bottom:none}
+.filter-item:hover{background:var(--surface2)}
+.filter-item.selected{background:rgba(0,229,255,.06)}
+[data-theme="bright"] .filter-item.selected{background:rgba(2,132,199,.06)}
+.filter-check{
+  width:14px;height:14px;border:1px solid var(--border);border-radius:2px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+}
+.filter-item.selected .filter-check{background:var(--accent);border-color:var(--accent)}
+.filter-check-mark{color:#000;font-size:10px;font-weight:700;display:none}
+[data-theme="dark"] .filter-check-mark{color:#000}
+.filter-item.selected .filter-check-mark{display:block}
+.filter-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-item-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0}
+.filter-no-result{padding:16px 12px;text-align:center;color:var(--muted);font-size:12px}
+
 .ms-trigger{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text);transition:border .15s;box-shadow:var(--shadow-float);min-width:140px;max-width:260px;}
 .ms-trigger:hover,.ms-trigger.open{border-color:var(--accent)}
 .chips-area{flex:1;display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;min-width:0}
@@ -285,15 +339,29 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
     font-family:var(--mono);font-size:10px;color:var(--accent);
     letter-spacing:1.2px;text-transform:uppercase;
     padding:10px 14px;border-bottom:1px solid var(--border);
-    flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;display:flex;align-items:center;gap:6px;
+    cursor:pointer;user-select:none;transition:background .12s;
   }
+  .desktop-legend-title:hover{background:rgba(255,255,255,.04)}
+  [data-theme="bright"] .desktop-legend-title:hover{background:rgba(0,0,0,.04)}
+  .desktop-legend-title-text{flex:1}
   .desktop-legend-count{
     font-family:var(--mono);font-size:9px;color:var(--muted);
-    background:var(--surface2);padding:1px 6px;border-radius:10px;
+    background:var(--surface2);padding:1px 6px;border-radius:10px;flex-shrink:0;
   }
+  .desktop-legend-caret{
+    font-size:9px;color:var(--muted);transition:transform .22s ease;flex-shrink:0;
+  }
+  .desktop-legend.collapsed .desktop-legend-caret{transform:rotate(-90deg)}
+  .desktop-legend.collapsed .desktop-legend-title{border-bottom-color:transparent}
   .desktop-legend-body{
     overflow-y:auto;overscroll-behavior:contain;
+    max-height:400px;
+    transition:max-height .25s cubic-bezier(.4,0,.2,1),padding .25s;
     padding:6px 14px;
+  }
+  .desktop-legend.collapsed .desktop-legend-body{
+    max-height:0;padding-top:0;padding-bottom:0;overflow:hidden;
   }
   .desktop-legend-body::-webkit-scrollbar{width:4px}
   .desktop-legend-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -485,6 +553,23 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
       </div>
       <div class="ms-dropdown" id="msDropdown" style="position:absolute;top:calc(100% + 4px);left:0;min-width:260px"></div>
     </div>
+
+    <!-- Filter wilayah kab/kota -->
+    <div class="filter-wrap" id="filterWrap">
+      <div class="filter-trigger" id="filterTrigger" onclick="toggleFilterDropdown()">
+        <span class="filter-label" id="filterLabel">Semua wilayah</span>
+        <span class="filter-clear" id="filterClear" title="Reset filter" onclick="clearAreaFilter(event)">&#10005;</span>
+        <span class="filter-caret" id="filterCaret">&#9660;</span>
+      </div>
+      <div class="filter-dropdown" id="filterDropdown">
+        <div class="filter-search-wrap">
+          <input type="text" class="filter-search-input" id="filterSearchInput"
+            placeholder="Cari kota/kabupaten&#8230;"
+            oninput="filterAreaList(this.value)">
+        </div>
+        <div class="filter-list" id="filterList"></div>
+      </div>
+    </div>
   </div>
 
   <div class="map-controls" id="mapControls">
@@ -533,9 +618,10 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 
   <!-- Legend desktop: selalu tampil di kiri bawah saat ada klien aktif -->
   <div class="desktop-legend" id="desktopLegend">
-    <div class="desktop-legend-title">
-      <span>Status ISR per klien</span>
+    <div class="desktop-legend-title" onclick="toggleDesktopLegend()">
+      <span class="desktop-legend-title-text">Status ISR per klien</span>
       <span class="desktop-legend-count" id="desktopLegendCount">0</span>
+      <span class="desktop-legend-caret">&#9660;</span>
     </div>
     <div class="desktop-legend-body" id="desktopLegendInner"></div>
   </div>
@@ -891,13 +977,13 @@ function renderAllVisible(skipFit=false){
     currentSites.push(...data.sites);currentEdges.push(...data.edges);
   });
   if(bounds.length&&!skipFit)map.fitBounds(bounds,{padding:[50,50],maxZoom:14});
-  refreshMarkers();applySharedSiteIcons([...selectedIds]);requestAnimationFrame(()=>updateLinkLabels(null));
+  refreshMarkers();applySharedSiteIcons([...selectedIds]);requestAnimationFrame(()=>updateLinkLabels(null));buildAreaFilterList();
   edgeCanvasVisible=showLinks;scheduleEdgeDraw();updateFooter();
 }
 
 function refreshMarkers(){
   if(!currentSites.length)return;const bounds=map.getBounds().pad(0.15);markerLayer.clearLayers();
-  currentSites.forEach(site=>{if(!site.marker)return;if(bounds.contains([site.lat,site.lng])){const clntId=findClientOfSite(site.id);const color=clientColorMap[clntId]||'#00e5ff';site.marker.setIcon(mkSiteIcon(site.linkCount||site.isr.length,site.ghost,site.id===activeSiteId,color));markerLayer.addLayer(site.marker);}});
+  currentSites.forEach(site=>{if(!site.marker)return;if(!sitePassesFilter(site))return;if(bounds.contains([site.lat,site.lng])){const clntId=findClientOfSite(site.id);const color=clientColorMap[clntId]||'#00e5ff';site.marker.setIcon(mkSiteIcon(site.linkCount||site.isr.length,site.ghost,site.id===activeSiteId,color));markerLayer.addLayer(site.marker);}});
   applySharedSiteIcons([...selectedIds]);
 }
 map.on('moveend zoomend',refreshMarkers);
@@ -1075,8 +1161,153 @@ function copyText(text, btn) {
 }
 
 function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
-function closeDropdownAll(){document.getElementById('msDropdown').classList.remove('open');document.getElementById('chipCaret').classList.remove('open');document.getElementById('msTrigger').classList.remove('open');document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');}
-document.addEventListener('click',e=>{if(!e.target.closest('#msTrigger')&&!e.target.closest('#msDropdown')&&!e.target.closest('#legendBtn')&&!e.target.closest('#legendPanel')&&!e.target.closest('#locBtn')&&!e.target.closest('#locPopup')){closeDropdownAll();}});
+/* ══════════════════════════════════════════════
+   FILTER WILAYAH (kabupaten/kota)
+   ══════════════════════════════════════════════ */
+let selectedAreas = new Set(); // Set city string yang dipilih, kosong = semua
+
+/* Kumpulkan semua city unik dari klien yang sudah di-load */
+function getAvailableCities(){
+  const cityCount = {};
+  [...selectedIds].forEach(clntId=>{
+    const data = allLayersData[clntId];
+    if(!data) return;
+    data.sites.forEach(site=>{
+      site.isr.forEach(isr=>{
+        if(isr.city){
+          const c = isr.city.trim().toUpperCase();
+          cityCount[c] = (cityCount[c]||0) + 1;
+        }
+      });
+    });
+  });
+  return Object.entries(cityCount)
+    .sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+}
+
+/* Cek apakah site lolos filter wilayah */
+function sitePassesFilter(site){
+  if(selectedAreas.size === 0) return true;
+  return site.isr.some(isr => isr.city && selectedAreas.has(isr.city.trim().toUpperCase()));
+}
+
+/* Rebuild dropdown list */
+function buildAreaFilterList(){
+  const cities = getAvailableCities();
+  const list = document.getElementById('filterList');
+  if(!list) return;
+
+  const prevQ = document.getElementById('filterSearchInput')?.value || '';
+
+  if(!cities.length){
+    list.innerHTML = '<div class="filter-no-result">Muat klien terlebih dahulu</div>';
+    return;
+  }
+
+  list.innerHTML = cities.map(([city, count])=>{
+    const sel = selectedAreas.has(city);
+    return `<div class="filter-item${sel?' selected':''}" data-city="${esc(city)}">`
+      +`<div class="filter-check"><span class="filter-check-mark">&#10003;</span></div>`
+      +`<span class="filter-item-name">${esc(city)}</span>`
+      +`<span class="filter-item-count">${count}</span>`
+      +`</div>`;
+  }).join('');
+  // Event delegation — aman untuk semua nama kota, tanpa quote escape issues
+  list.onclick = ev => {
+    ev.stopPropagation(); // cegah bubble ke filterTrigger onclick
+    const item = ev.target.closest('.filter-item');
+    if(item && item.dataset.city) toggleAreaFilter(item.dataset.city);
+  };
+  if(prevQ) filterAreaList(prevQ);
+}
+
+/* Filter list saat user ketik */
+function filterAreaList(q){
+  const items = document.querySelectorAll('#filterList .filter-item');
+  const lq = q.trim().toLowerCase();
+  let visible = 0;
+  items.forEach(el=>{
+    const name = el.querySelector('.filter-item-name')?.textContent.toLowerCase()||'';
+    const match = !lq || name.includes(lq);
+    el.style.display = match ? '' : 'none';
+    if(match) visible++;
+  });
+  let noResult = document.querySelector('#filterList .filter-no-result');
+  if(visible===0){
+    if(!noResult){
+      noResult = document.createElement('div');
+      noResult.className = 'filter-no-result';
+      noResult.textContent = 'Wilayah tidak ditemukan';
+      document.getElementById('filterList').appendChild(noResult);
+    }
+  } else if(noResult){ noResult.remove(); }
+}
+
+/* Toggle satu kota */
+function toggleAreaFilter(city){
+  if(selectedAreas.has(city)) selectedAreas.delete(city);
+  else selectedAreas.add(city);
+  updateFilterTriggerLabel();
+  buildAreaFilterList();
+  refreshMarkers();
+  scheduleEdgeDraw();
+}
+
+/* Clear semua filter */
+function clearAreaFilter(ev){
+  if(ev){ ev.stopPropagation(); }
+  selectedAreas.clear();
+  updateFilterTriggerLabel();
+  buildAreaFilterList();
+  refreshMarkers();
+  scheduleEdgeDraw();
+}
+
+/* Update label di trigger button */
+function updateFilterTriggerLabel(){
+  const trigger = document.getElementById('filterTrigger');
+  const label = document.getElementById('filterLabel');
+  const caret = document.getElementById('filterCaret');
+  if(!trigger||!label) return;
+  if(selectedAreas.size===0){
+    label.textContent='Semua wilayah';
+    trigger.classList.remove('active');
+  } else if(selectedAreas.size===1){
+    label.textContent=[...selectedAreas][0];
+    trigger.classList.add('active');
+  } else {
+    label.textContent=selectedAreas.size+' wilayah';
+    trigger.classList.add('active');
+  }
+}
+
+/* Toggle dropdown filter */
+function toggleFilterDropdown(){
+  const dd = document.getElementById('filterDropdown');
+  const caret = document.getElementById('filterCaret');
+  const trigger = document.getElementById('filterTrigger');
+  const isOpen = dd.classList.contains('open');
+  // Tutup dropdown lain dulu
+  closeDropdownAll();
+  if(!isOpen){
+    buildAreaFilterList();
+    dd.classList.add('open');
+    caret.classList.add('open');
+    trigger.classList.add('open');
+    // Focus ke search input
+    setTimeout(()=>{ document.getElementById('filterSearchInput')?.focus(); }, 50);
+  }
+}
+
+/* Close filter dropdown */
+function closeFilterDropdown(){
+  document.getElementById('filterDropdown')?.classList.remove('open');
+  document.getElementById('filterCaret')?.classList.remove('open');
+  document.getElementById('filterTrigger')?.classList.remove('open');
+}
+
+function closeDropdownAll(){document.getElementById('msDropdown').classList.remove('open');document.getElementById('chipCaret').classList.remove('open');document.getElementById('msTrigger').classList.remove('open');document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');closeFilterDropdown();}
+document.addEventListener('click',e=>{if(!e.target.closest('#msTrigger')&&!e.target.closest('#msDropdown')&&!e.target.closest('#legendBtn')&&!e.target.closest('#legendPanel')&&!e.target.closest('#locBtn')&&!e.target.closest('#locPopup')&&!e.target.closest('#filterWrap')){closeDropdownAll();}});
 
 function renderClientItem(c){
   const color=clientColorMap[c.clnt_id]||'#00e5ff';const sel=selectedIds.has(+c.clnt_id);
@@ -1157,7 +1388,7 @@ function mobRenderChips(){
 }
 
 async function toggleClient(clntId){
-  if(clntId==='__all__'){const isAllSelected=selectedIds.size===allClients.length;if(isAllSelected){selectedIds.clear();}else{await ensureAllLoaded();allClients.forEach(c=>selectedIds.add(+c.clnt_id));if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{setUserLocation(pos.coords.latitude,pos.coords.longitude);map.setView([pos.coords.latitude,pos.coords.longitude],15,{animate:true});},()=>{map.setView([-7.80,110.37],15,{animate:true});});}else{map.setView([-7.80,110.37],15,{animate:true});}if(showLinks)setLinkVisibility(false);}}
+  if(clntId==='__all__'){const isAllSelected=selectedIds.size===allClients.length;if(isAllSelected){selectedIds.clear();clearAreaFilter();}else{await ensureAllLoaded();allClients.forEach(c=>selectedIds.add(+c.clnt_id));if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{setUserLocation(pos.coords.latitude,pos.coords.longitude);map.setView([pos.coords.latitude,pos.coords.longitude],15,{animate:true});},()=>{map.setView([-7.80,110.37],15,{animate:true});});}else{map.setView([-7.80,110.37],15,{animate:true});}if(showLinks)setLinkVisibility(false);}}
   else{const id=+clntId;if(selectedIds.has(id)){selectedIds.delete(id);}else{selectedIds.add(id);showSkeletonForClient(id);await ensureLoaded(id);clearSkeleton();}}
   LS.save();
   const skipFitNow=(clntId==='__all__'&&selectedIds.size===allClients.length);
@@ -1282,6 +1513,22 @@ document.addEventListener('click',(e)=>{if(!e.target.closest('#locBtn')&&!e.targ
     if(ev.target.closest(PANEL_SEL)) disableZoom();
     else enableZoom();
   }, { passive: true });
+})();
+
+/* ── Desktop legend collapse toggle ── */
+function toggleDesktopLegend(){
+  const el = document.getElementById('desktopLegend');
+  el.classList.toggle('collapsed');
+  try { localStorage.setItem('komenk_legend_collapsed', el.classList.contains('collapsed')?'1':'0'); } catch(e){}
+}
+// Restore collapsed state on load
+(function(){
+  try {
+    if(localStorage.getItem('komenk_legend_collapsed')==='1'){
+      const el=document.getElementById('desktopLegend');
+      if(el) el.classList.add('collapsed');
+    }
+  } catch(e){}
 })();
 
 window.addEventListener('beforeunload',()=>{ LS.save(); });
