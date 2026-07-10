@@ -52,8 +52,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .logo-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
 .logo-sub{font-size:9px;color:var(--muted);letter-spacing:1px;white-space:nowrap}
 
-.float-controls{position:absolute;top:12px;z-index:600;display:flex;flex-direction:row;align-items:center;gap:6px;left:12px;}
-.ctrl-pill{display:flex;align-items:center;gap:6px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;box-shadow:var(--shadow-float);font-size:11px;color:var(--muted);white-space:nowrap;}
+.float-controls{position:absolute;top:12px;z-index:600;display:flex;flex-direction:row;align-items:center;gap:6px;left:12px;flex-wrap:nowrap;}
+.ctrl-pill{display:flex;align-items:center;gap:5px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:5px 9px;box-shadow:var(--shadow-float);font-size:11px;color:var(--muted);white-space:nowrap;}
 .ctrl-pill select{background:transparent;border:none;color:var(--text);font-size:11px;cursor:pointer;outline:none;font-family:var(--sans);}
 .ctrl-pill select option{background:var(--surface);color:var(--text)}
 
@@ -73,9 +73,9 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .filter-trigger{
   background:var(--glass);backdrop-filter:blur(10px);
   border:1px solid var(--border);border-radius:var(--radius);
-  padding:4px 10px;display:flex;align-items:center;gap:6px;
+  padding:4px 8px;display:flex;align-items:center;gap:5px;
   cursor:pointer;font-size:11px;color:var(--text);transition:border .15s;
-  box-shadow:var(--shadow-float);min-width:130px;height:32px;
+  box-shadow:var(--shadow-float);min-width:110px;max-width:160px;height:32px;
 }
 .filter-trigger:hover,.filter-trigger.open{border-color:var(--accent)}
 .filter-trigger.active{border-color:var(--accent2);color:var(--accent2)}
@@ -121,7 +121,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .filter-item-count{font-family:var(--mono);font-size:10px;color:var(--muted);flex-shrink:0}
 .filter-no-result{padding:16px 12px;text-align:center;color:var(--muted);font-size:12px}
 
-.ms-trigger{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text);transition:border .15s;box-shadow:var(--shadow-float);min-width:140px;max-width:260px;}
+.ms-trigger{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:5px 9px;display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:var(--text);transition:border .15s;box-shadow:var(--shadow-float);min-width:120px;max-width:220px;}
 .ms-trigger:hover,.ms-trigger.open{border-color:var(--accent)}
 .chips-area{flex:1;display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;min-width:0}
 .chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:2px;border:1px solid;white-space:nowrap;flex-shrink:0;}
@@ -329,8 +329,8 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
     bottom:calc(12px + env(safe-area-inset-bottom,0));
     z-index:600;background:var(--glass);backdrop-filter:blur(10px);
     border:1px solid var(--border);border-radius:var(--radius);
-    box-shadow:var(--shadow-float);width:300px;
-    max-height:min(420px, calc(100dvh - 140px));
+    box-shadow:var(--shadow-float);width:clamp(220px,22vw,300px);
+    max-height:min(380px, calc(100dvh - 140px));
     display:none;flex-direction:column;
     overflow:hidden;
   }
@@ -366,9 +366,9 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .desktop-legend-body::-webkit-scrollbar{width:4px}
   .desktop-legend-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
   .desktop-legend .leg-row{grid-template-columns:8px 1fr 64px 38px}
-  .detail-panel{position:absolute;top:0;right:0;bottom:0;left:auto;width:510px;max-height:100dvh;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);border-top:none;border-left:2px solid var(--border);border-radius:0;z-index:1000;}
+  .detail-panel{position:absolute;top:0;right:0;bottom:0;left:auto;width:clamp(340px,35vw,510px);max-height:100dvh;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);border-top:none;border-left:2px solid var(--border);border-radius:0;z-index:1000;}
   .detail-panel.open{transform:translateX(0)}
-  .panel-body{max-height:calc(100dvh - 140px)}
+  .panel-body{max-height:calc(100dvh - 140px);padding:12px 14px}
   .leaflet-top.leaflet-right .leaflet-control-zoom{margin-top:12px!important;margin-right:10px!important;}
   .map-controls{top:calc(12px + 74px + 12px);right:10px;}
   .loc-popup{right:56px;top:calc(12px + 74px + 12px);}
@@ -448,6 +448,54 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   .mob-drawer-select:hover{border-color:var(--accent)}
   .mob-drawer-select option{background:var(--surface)}
   .mob-drawer-legend{padding:0 16px 12px}
+  .mob-drawer-legend-header{
+    display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;user-select:none;
+    font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;
+    padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:0;
+    transition:color .15s;
+  }
+  .mob-drawer-legend-header:hover{color:var(--text)}
+  .mob-drawer-legend-caret{font-size:9px;transition:transform .22s ease}
+  .mob-drawer-legend.collapsed .mob-drawer-legend-caret{transform:rotate(-90deg)}
+  .mob-legend-items{
+    max-height:400px;overflow:hidden;
+    transition:max-height .25s cubic-bezier(.4,0,.2,1),margin .25s;
+    margin-top:6px;
+  }
+  .mob-drawer-legend.collapsed .mob-legend-items{max-height:0;margin-top:0}
+
+  /* Filter wilayah di drawer mobile */
+  .mob-drawer-filter{padding:0 16px 12px}
+  .mob-filter-search{
+    width:100%;background:var(--bg);border:1px solid var(--border);
+    border-radius:6px;color:var(--text);font-size:13px;padding:8px 10px;
+    outline:none;font-family:var(--sans);transition:border-color .15s;margin-top:6px;
+  }
+  .mob-filter-search:focus{border-color:var(--accent)}
+  .mob-filter-search::placeholder{color:var(--muted)}
+  .mob-filter-list{margin-top:4px;max-height:200px;overflow-y:auto;overscroll-behavior:contain}
+  .mob-filter-list::-webkit-scrollbar{display:none}
+  .mob-filter-item{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 0;border-bottom:1px solid var(--border);
+    cursor:pointer;font-size:13px;color:var(--text);transition:background .12s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mob-filter-item:last-child{border-bottom:none}
+  .mob-filter-item.selected .filter-check{background:var(--accent);border-color:var(--accent)}
+  .mob-filter-item.selected .filter-check-mark{display:block}
+  .mob-filter-count{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;flex-shrink:0}
+  .mob-filter-active-label{
+    font-size:11px;color:var(--accent2);margin-top:6px;display:none;
+  }
+  .mob-filter-active-label.show{display:flex;align-items:center;gap:6px}
+  .mob-filter-clear-btn{
+    font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto;
+    padding:2px 6px;border-radius:4px;border:1px solid var(--border);
+    background:var(--surface);transition:color .12s,border-color .12s;
+  }
+  .mob-filter-clear-btn:hover{color:var(--red);border-color:var(--red)}
   .mob-legend-items{display:flex;flex-direction:column;gap:6px;margin-top:6px}
   .mob-legend-row{
     display:grid;grid-template-columns:9px 1fr 60px 38px;
@@ -710,8 +758,25 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
           <button class="primary" onclick="mobGoLoc()">Go</button>
         </div>
       </div>
+      <!-- Filter wilayah di drawer -->
+      <div class="mob-drawer-filter" id="mobDrawerFilter" style="display:none">
+        <div class="mob-drawer-label">Filter Wilayah</div>
+        <div class="mob-filter-active-label" id="mobFilterActiveLabel">
+          <span id="mobFilterActiveText">Semua wilayah</span>
+          <span class="mob-filter-clear-btn" onclick="clearAreaFilter()">Reset</span>
+        </div>
+        <input type="text" class="mob-filter-search" id="mobFilterSearch"
+          placeholder="Cari kota/kabupaten&#8230;"
+          oninput="mobFilterAreaList(this.value)">
+        <div class="mob-filter-list" id="mobFilterList"></div>
+      </div>
+
+      <!-- Legenda collapsible -->
       <div class="mob-drawer-legend" id="mobDrawerLegend" style="display:none">
-        <div class="mob-drawer-label">Legenda</div>
+        <div class="mob-drawer-legend-header" onclick="toggleMobLegend()">
+          <span>Legenda</span>
+          <span class="mob-drawer-legend-caret">&#9660;</span>
+        </div>
         <div class="mob-legend-items" id="mobLegendItems"></div>
       </div>
     </div>
@@ -1054,8 +1119,13 @@ function updateLegend(){
   if(dskWrap&&dskInner){
     dskWrap.classList.toggle('show', activeIds.length>0);
     dskInner.innerHTML = renderRows('leg-row','leg-dot');
-    if(dskCount) dskCount.textContent = activeIds.length + (activeIds.length===1?' klien':' klien');
+    if(dskCount) dskCount.textContent = activeIds.length + ' klien';
   }
+
+  // 4) Filter wilayah drawer mobile: tampil kalau ada klien aktif
+  const mobFilterWrap = document.getElementById('mobDrawerFilter');
+  if(mobFilterWrap) mobFilterWrap.style.display = activeIds.length ? '' : 'none';
+  if(activeIds.length) buildMobFilterList();
 }
 
 function updateLinkLabels(activeSiteId){
@@ -1249,16 +1319,19 @@ function toggleAreaFilter(city){
   else selectedAreas.add(city);
   updateFilterTriggerLabel();
   buildAreaFilterList();
+  updateMobFilterLabel();
   refreshMarkers();
   scheduleEdgeDraw();
 }
 
 /* Clear semua filter */
 function clearAreaFilter(ev){
-  if(ev){ ev.stopPropagation(); }
+  if(ev && ev.stopPropagation) ev.stopPropagation();
   selectedAreas.clear();
   updateFilterTriggerLabel();
   buildAreaFilterList();
+  buildMobFilterList();
+  updateMobFilterLabel();
   refreshMarkers();
   scheduleEdgeDraw();
 }
@@ -1535,6 +1608,75 @@ document.addEventListener('click',(e)=>{if(!e.target.closest('#locBtn')&&!e.targ
     else enableZoom();
   }, { passive: true });
 })();
+
+/* ── Mobile: legend collapsible toggle ── */
+function toggleMobLegend(){
+  const wrap = document.getElementById('mobDrawerLegend');
+  if(!wrap) return;
+  wrap.classList.toggle('collapsed');
+  try { localStorage.setItem('komenk_mob_legend_collapsed', wrap.classList.contains('collapsed')?'1':'0'); } catch(e){}
+}
+(function(){
+  try {
+    if(localStorage.getItem('komenk_mob_legend_collapsed')==='1'){
+      const el=document.getElementById('mobDrawerLegend');
+      if(el) el.classList.add('collapsed');
+    }
+  } catch(e){}
+})();
+
+/* ── Mobile: filter wilayah di drawer ── */
+function buildMobFilterList(){
+  const list = document.getElementById('mobFilterList');
+  if(!list) return;
+  const cities = getAvailableCities();
+  if(!cities.length){
+    list.innerHTML = '<div style="padding:12px 0;color:var(--muted);font-size:12px">Belum ada data wilayah</div>';
+    return;
+  }
+  list.innerHTML = cities.map(([city, count])=>{
+    const sel = selectedAreas.has(city);
+    return `<div class="mob-filter-item${sel?' selected':''}" data-city="${esc(city)}">
+      <div class="filter-check"><span class="filter-check-mark">&#10003;</span></div>
+      <span>${esc(city)}</span>
+      <span class="mob-filter-count">${count}</span>
+    </div>`;
+  }).join('');
+
+  list.onclick = ev => {
+    ev.stopPropagation();
+    const item = ev.target.closest('.mob-filter-item');
+    if(item && item.dataset.city){
+      toggleAreaFilter(item.dataset.city);
+      buildMobFilterList(); // rebuild list mobile
+      updateMobFilterLabel();
+    }
+  };
+}
+
+function mobFilterAreaList(q){
+  const items = document.querySelectorAll('#mobFilterList .mob-filter-item');
+  const lq = q.trim().toLowerCase();
+  items.forEach(el=>{
+    const name = el.querySelector('span')?.textContent.toLowerCase()||'';
+    el.style.display = !lq || name.includes(lq) ? '' : 'none';
+  });
+}
+
+function updateMobFilterLabel(){
+  const label = document.getElementById('mobFilterActiveLabel');
+  const text = document.getElementById('mobFilterActiveText');
+  if(!label||!text) return;
+  if(selectedAreas.size===0){
+    label.classList.remove('show');
+    text.textContent='Semua wilayah';
+  } else {
+    label.classList.add('show');
+    text.textContent = selectedAreas.size===1
+      ? [...selectedAreas][0]
+      : selectedAreas.size+' wilayah dipilih';
+  }
+}
 
 /* ── Desktop legend collapse toggle ── */
 function toggleDesktopLegend(){
