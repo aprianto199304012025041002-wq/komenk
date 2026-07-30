@@ -891,6 +891,12 @@ function _drawEdges(){
   _resizeEdgeCanvas();const pad=edgeCanvas._pad||0;ctx.clearRect(0,0,edgeCanvas.width,edgeCanvas.height);
   _edgeDrawData.forEach(e=>{
     if(_activeDrawSiteIds&&!_activeDrawSiteIds.has(e.siteAId)&&!_activeDrawSiteIds.has(e.siteBId))return;
+    // Respek filter wilayah: sembunyikan garis jika kedua site tidak lolos filter
+    if(selectedAreas.size>0){
+      const sA=sitesIndex[e.siteAId],sB=sitesIndex[e.siteBId];
+      const aOk=sA&&sitePassesFilter(sA);const bOk=sB&&sitePassesFilter(sB);
+      if(!aOk&&!bOk)return;
+    }
     const pa=map.latLngToContainerPoint([e.lat1,e.lng1]);const pb=map.latLngToContainerPoint([e.lat2,e.lng2]);
     ctx.beginPath();ctx.moveTo(pa.x+pad,pa.y+pad);ctx.lineTo(pb.x+pad,pb.y+pad);
     ctx.strokeStyle=e.color;ctx.lineWidth=e.weight;ctx.globalAlpha=e.ghost?0.55:0.85;
@@ -1230,7 +1236,7 @@ function copyText(text, btn) {
   });
 }
 
-function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
+function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
 /* ══════════════════════════════════════════════
    FILTER WILAYAH (kabupaten/kota)
    ══════════════════════════════════════════════ */
@@ -1313,6 +1319,17 @@ function filterAreaList(q){
   } else if(noResult){ noResult.remove(); }
 }
 
+/* Refresh interaktivitas hitbox edge sesuai filter wilayah aktif */
+function refreshEdgeHitboxes(){
+  currentEdges.forEach(e=>{
+    if(!e.hitbox)return;
+    const sA=sitesIndex[e.siteA?.id],sB=sitesIndex[e.siteB?.id];
+    const passes=selectedAreas.size===0||(sA&&sitePassesFilter(sA))||(sB&&sitePassesFilter(sB));
+    e.hitbox.setStyle({interactive:passes,opacity:passes?0.001:0});
+    if(passes)e.hitbox.on('click',e.hitbox._events?.click?.[0]||function(){});
+  });
+}
+
 /* Toggle satu kota */
 function toggleAreaFilter(city){
   if(selectedAreas.has(city)) selectedAreas.delete(city);
@@ -1321,6 +1338,7 @@ function toggleAreaFilter(city){
   buildAreaFilterList();
   updateMobFilterLabel();
   refreshMarkers();
+  refreshEdgeHitboxes();
   scheduleEdgeDraw();
 }
 
@@ -1333,6 +1351,7 @@ function clearAreaFilter(ev){
   buildMobFilterList();
   updateMobFilterLabel();
   refreshMarkers();
+  refreshEdgeHitboxes();
   scheduleEdgeDraw();
 }
 
