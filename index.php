@@ -893,8 +893,9 @@ function _drawEdges(){
     if(_activeDrawSiteIds&&!_activeDrawSiteIds.has(e.siteAId)&&!_activeDrawSiteIds.has(e.siteBId))return;
     // Respek filter wilayah: sembunyikan garis jika tidak ada ujung yang lolos filter
     // Ghost site (tidak punya city) selalu dianggap lolos agar garis ke ghost tidak hilang
+    // Pakai siteARef/siteBRef langsung (bukan sitesIndex) agar tidak kena collision ID antar klien
     if(selectedAreas.size>0){
-      const sA=sitesIndex[e.siteAId],sB=sitesIndex[e.siteBId];
+      const sA=e.siteARef,sB=e.siteBRef;
       const aOk=!sA||sA.ghost||sitePassesFilter(sA);
       const bOk=!sB||sB.ghost||sitePassesFilter(sB);
       if(!aOk&&!bOk)return;
@@ -1046,7 +1047,7 @@ function renderAllVisible(skipFit=false){
     const data=allLayersData[clntId];if(!data)return;const color=clientColorMap[clntId]||'#00e5ff';
     data.sites.forEach(site=>{const m=L.marker([site.lat,site.lng],{icon:mkSiteIcon(site.linkCount||site.isr.length,site.ghost,false,color)});const clntName=(()=>{const c=allClients.find(x=>x.clnt_id==clntId);return c?c.clnt_name.split(',')[0].split(' ').slice(0,3).join(' '):''})();
       const tipText=site.ghost?`<b>${esc(site.label)}</b><br><span style="color:${color}">Ghost site</span>`:`<b>${esc(site.label)}</b><br><span style="color:${color};font-size:10px">${esc(clntName)}</span><br>${site.isr.length} ISR &middot; ${site.linkCount||0} MW Link`;m.bindTooltip(tipText,{className:'lf-tooltip',direction:'right',offset:[12,0]});m.on('click',(ev)=>{L.DomEvent.stopPropagation(ev);selectSite(site.id);});site.marker=m;sitesIndex[site.id]=site;bounds.push([site.lat,site.lng]);});
-    data.edges.forEach(e=>{const a=e.siteA,b=e.siteB;const lineColor=e.ghost?color+'88':color+'cc';_edgeDrawData.push({color:lineColor,weight:e.ghost?2:3,ghost:e.ghost,lat1:a.lat,lng1:a.lng,lat2:b.lat,lng2:b.lng,siteAId:a.id,siteBId:b.id});const hitbox=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:'transparent',weight:20,opacity:0.001,interactive:true,bubblingMouseEvents:false}).addTo(edgeLayer);hitbox.bindTooltip(`<b>${e.mwlinks.length} MWLink</b><br>${esc(a.label)} \u2194 ${esc(b.label)}`,{className:'lf-tooltip',direction:'top',sticky:true});hitbox.on('click',(ev)=>{L.DomEvent.stopPropagation(ev);selectSite(a.id);});e.line=null;e.hitbox=hitbox;edgesIndex[e.id]=e;const midLat=(a.lat+b.lat)/2,midLng=(a.lng+b.lng)/2;const lbl=L.marker([midLat,midLng],{icon:L.divIcon({html:`<div class="link-count-label">${e.mwlinks.length}</div>`,className:'',iconSize:[20,16],iconAnchor:[10,8]}),interactive:false,zIndexOffset:-100}).addTo(linkLabelsLayer);e.labelMarker=lbl;});
+    data.edges.forEach(e=>{const a=e.siteA,b=e.siteB;const lineColor=e.ghost?color+'88':color+'cc';_edgeDrawData.push({color:lineColor,weight:e.ghost?2:3,ghost:e.ghost,lat1:a.lat,lng1:a.lng,lat2:b.lat,lng2:b.lng,siteAId:a.id,siteBId:b.id,siteARef:a,siteBRef:b});const hitbox=L.polyline([[a.lat,a.lng],[b.lat,b.lng]],{color:'transparent',weight:20,opacity:0.001,interactive:true,bubblingMouseEvents:false}).addTo(edgeLayer);hitbox.bindTooltip(`<b>${e.mwlinks.length} MWLink</b><br>${esc(a.label)} \u2194 ${esc(b.label)}`,{className:'lf-tooltip',direction:'top',sticky:true});hitbox.on('click',(ev)=>{L.DomEvent.stopPropagation(ev);selectSite(a.id);});e.line=null;e.hitbox=hitbox;edgesIndex[e.id]=e;const midLat=(a.lat+b.lat)/2,midLng=(a.lng+b.lng)/2;const lbl=L.marker([midLat,midLng],{icon:L.divIcon({html:`<div class="link-count-label">${e.mwlinks.length}</div>`,className:'',iconSize:[20,16],iconAnchor:[10,8]}),interactive:false,zIndexOffset:-100}).addTo(linkLabelsLayer);e.labelMarker=lbl;});
     currentSites.push(...data.sites);currentEdges.push(...data.edges);
   });
   if(bounds.length&&!skipFit)map.fitBounds(bounds,{padding:[50,50],maxZoom:14});
