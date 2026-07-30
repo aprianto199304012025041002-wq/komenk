@@ -891,10 +891,12 @@ function _drawEdges(){
   _resizeEdgeCanvas();const pad=edgeCanvas._pad||0;ctx.clearRect(0,0,edgeCanvas.width,edgeCanvas.height);
   _edgeDrawData.forEach(e=>{
     if(_activeDrawSiteIds&&!_activeDrawSiteIds.has(e.siteAId)&&!_activeDrawSiteIds.has(e.siteBId))return;
-    // Respek filter wilayah: sembunyikan garis jika kedua site tidak lolos filter
+    // Respek filter wilayah: sembunyikan garis jika tidak ada ujung yang lolos filter
+    // Ghost site (tidak punya city) selalu dianggap lolos agar garis ke ghost tidak hilang
     if(selectedAreas.size>0){
       const sA=sitesIndex[e.siteAId],sB=sitesIndex[e.siteBId];
-      const aOk=sA&&sitePassesFilter(sA);const bOk=sB&&sitePassesFilter(sB);
+      const aOk=!sA||sA.ghost||sitePassesFilter(sA);
+      const bOk=!sB||sB.ghost||sitePassesFilter(sB);
       if(!aOk&&!bOk)return;
     }
     const pa=map.latLngToContainerPoint([e.lat1,e.lng1]);const pb=map.latLngToContainerPoint([e.lat2,e.lng2]);
@@ -1325,9 +1327,10 @@ function refreshEdgeHitboxes(){
   currentEdges.forEach(e=>{
     if(!e.hitbox)return;
     const siteA=e.siteA,siteB=e.siteB;
-    const passes=selectedAreas.size===0
-      ||(siteA&&sitePassesFilter(siteA))
-      ||(siteB&&sitePassesFilter(siteB));
+    // Ghost site tidak punya city, selalu dianggap lolos agar garis ke ghost ikut sisi aslinya
+    const aOk=!siteA||siteA.ghost||sitePassesFilter(siteA);
+    const bOk=!siteB||siteB.ghost||sitePassesFilter(siteB);
+    const passes=selectedAreas.size===0||aOk||bOk;
     // Sembunyikan hitbox dengan weight:0 agar tidak bisa diklik/tooltip
     e.hitbox.setStyle({opacity:passes?0.001:0,weight:passes?20:0});
   });
