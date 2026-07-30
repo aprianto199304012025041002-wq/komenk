@@ -1321,12 +1321,15 @@ function filterAreaList(q){
 
 /* Refresh interaktivitas hitbox edge sesuai filter wilayah aktif */
 function refreshEdgeHitboxes(){
+  if(!map.hasLayer(edgeLayer))return;
   currentEdges.forEach(e=>{
     if(!e.hitbox)return;
-    const sA=sitesIndex[e.siteA?.id],sB=sitesIndex[e.siteB?.id];
-    const passes=selectedAreas.size===0||(sA&&sitePassesFilter(sA))||(sB&&sitePassesFilter(sB));
-    e.hitbox.setStyle({interactive:passes,opacity:passes?0.001:0});
-    if(passes)e.hitbox.on('click',e.hitbox._events?.click?.[0]||function(){});
+    const siteA=e.siteA,siteB=e.siteB;
+    const passes=selectedAreas.size===0
+      ||(siteA&&sitePassesFilter(siteA))
+      ||(siteB&&sitePassesFilter(siteB));
+    // Sembunyikan hitbox dengan weight:0 agar tidak bisa diklik/tooltip
+    e.hitbox.setStyle({opacity:passes?0.001:0,weight:passes?20:0});
   });
 }
 
