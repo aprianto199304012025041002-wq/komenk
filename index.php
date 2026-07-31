@@ -1595,7 +1595,7 @@ async function loadClients(){
 
 function setLinkVisibility(checked){
   showLinks=checked;const lt=document.getElementById('linkToggle');if(lt)lt.checked=checked;const mlt=document.getElementById('mobLinkToggle');if(mlt)mlt.checked=checked;
-  if(showLinks){_activeDrawSiteIds=null;if(!map.hasLayer(edgeLayer))edgeLayer.addTo(map);if(!map.hasLayer(linkLabelsLayer))linkLabelsLayer.addTo(map);edgeCanvasVisible=true;scheduleEdgeDraw();}
+  if(showLinks){_activeDrawSiteIds=null;if(!map.hasLayer(edgeLayer))edgeLayer.addTo(map);if(!map.hasLayer(linkLabelsLayer))linkLabelsLayer.addTo(map);edgeCanvasVisible=true;refreshEdgeHitboxes();scheduleEdgeDraw();}
   else{if(map.hasLayer(edgeLayer))map.removeLayer(edgeLayer);if(map.hasLayer(linkLabelsLayer))map.removeLayer(linkLabelsLayer);edgeCanvasVisible=false;scheduleEdgeDraw();}
 }
 document.getElementById('linkToggle').addEventListener('change',function(){setLinkVisibility(this.checked);});
