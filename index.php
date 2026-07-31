@@ -1253,7 +1253,7 @@ function copyText(text, btn) {
   });
 }
 
-function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
+function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
 /* ══════════════════════════════════════════════
    FILTER WILAYAH (kabupaten/kota)
    ══════════════════════════════════════════════ */
@@ -1551,7 +1551,7 @@ function updateFooter(){
   updateLegend();
 }
 
-function toggleLegend(){const panel=document.getElementById('legendPanel');const btn=document.getElementById('legendBtn');const isOpen=panel.classList.contains('open');panel.classList.toggle('open',!isOpen);btn.classList.toggle('active',!isOpen);requestAnimationFrame(repositionZoom);}
+function toggleLegend(){const panel=document.getElementById('legendPanel');const btn=document.getElementById('legendBtn');const isOpen=panel.classList.contains('open');document.getElementById('msDropdown').classList.remove('open');document.getElementById('chipCaret').classList.remove('open');document.getElementById('msTrigger').classList.remove('open');document.getElementById('locPopup').classList.remove('open');closeFilterDropdown();panel.classList.toggle('open',!isOpen);btn.classList.toggle('active',!isOpen);requestAnimationFrame(repositionZoom);}
 
 async function loadClients(){
   let j;
@@ -1622,7 +1622,7 @@ function setUserLocation(lat,lng){
 function useGPSLoc(){if(!navigator.geolocation){alert('Geolocation tidak didukung browser ini.');return;}navigator.geolocation.getCurrentPosition(pos=>{document.getElementById('manualLat').value=pos.coords.latitude.toFixed(6);document.getElementById('manualLng').value=pos.coords.longitude.toFixed(6);},()=>alert('Gagal mendapatkan lokasi GPS.'));}
 function useManualLoc(){const lat=parseFloat(document.getElementById('manualLat').value);const lng=parseFloat(document.getElementById('manualLng').value);if(isNaN(lat)||isNaN(lng)){alert('Masukkan koordinat yang valid.');return;}document.getElementById('locPopup').classList.remove('open');setUserLocation(lat,lng);map.setView([lat,lng],15,{animate:true});}
 function goToLoc(){const lat=parseFloat(document.getElementById('manualLat').value);const lng=parseFloat(document.getElementById('manualLng').value);if(!isNaN(lat)&&!isNaN(lng)){useManualLoc();}else{useGPSLoc();setTimeout(()=>{const la=parseFloat(document.getElementById('manualLat').value);const lo=parseFloat(document.getElementById('manualLng').value);if(!isNaN(la)&&!isNaN(lo))useManualLoc();},1500);}}
-document.getElementById('locBtn').addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('locPopup').classList.toggle('open');});
+document.getElementById('locBtn').addEventListener('click',(e)=>{e.stopPropagation();document.getElementById('msDropdown').classList.remove('open');document.getElementById('chipCaret').classList.remove('open');document.getElementById('msTrigger').classList.remove('open');document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');closeFilterDropdown();document.getElementById('locPopup').classList.toggle('open');});
 document.addEventListener('click',(e)=>{if(!e.target.closest('#locBtn')&&!e.target.closest('#locPopup'))document.getElementById('locPopup').classList.remove('open');});
 
 
