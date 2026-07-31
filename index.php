@@ -127,7 +127,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:2px;border:1px solid;white-space:nowrap;flex-shrink:0;}
 .chip-caret{color:var(--muted);font-size:12px;transition:transform .2s;flex-shrink:0;margin-left:auto}
 .chip-caret.open{transform:rotate(180deg)}
-.ms-dropdown{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);z-index:700;max-height:300px;display:none;box-shadow:var(--shadow-float);overflow:hidden;display:none;flex-direction:column;}
+.ms-dropdown{margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);z-index:1300;max-height:300px;display:none;box-shadow:var(--shadow-float);overflow:hidden;display:none;flex-direction:column;}
 .ms-dropdown.open{display:flex}
 .ms-search-wrap{padding:8px;border-bottom:1px solid var(--border);flex-shrink:0}
 .ms-search-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;padding:6px 10px;outline:none;font-family:var(--sans);transition:border-color .15s}
@@ -599,7 +599,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
         </div>
         <span class="chip-caret" id="chipCaret">&#9660;</span>
       </div>
-      <div class="ms-dropdown" id="msDropdown" style="position:absolute;top:calc(100% + 4px);left:0;min-width:260px"></div>
+      <div class="ms-dropdown" id="msDropdown"></div>
     </div>
 
     <!-- Filter wilayah kab/kota -->
@@ -1253,7 +1253,7 @@ function copyText(text, btn) {
   });
 }
 
-function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
+function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');if(!isOpen){const rect=trigger.getBoundingClientRect();dd.style.position='fixed';dd.style.top=(rect.bottom+4)+'px';dd.style.left=rect.left+'px';dd.style.minWidth=Math.max(260,rect.width)+'px';const rightEdge=rect.left+260;if(rightEdge>window.innerWidth-8)dd.style.left=(window.innerWidth-260-8)+'px';}dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
 /* ══════════════════════════════════════════════
    FILTER WILAYAH (kabupaten/kota)
    ══════════════════════════════════════════════ */
