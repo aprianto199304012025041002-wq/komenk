@@ -178,6 +178,44 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .map-controls{position:absolute;right:10px;z-index:599;display:flex;flex-direction:column;gap:8px;top:calc(var(--topbar-h,12px) + 94px);}
 .map-ctrl-btn{width:36px;height:36px;border-radius:4px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;box-shadow:var(--shadow-float);}
 .map-ctrl-btn:hover{background:var(--surface2);border-color:var(--accent)}
+
+/* ── Search Overlay ── */
+#searchOverlay{position:absolute;inset:0;z-index:1100;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding-top:60px;}
+#searchOverlay.open{display:flex;}
+#searchBox{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:min(520px,90vw);box-shadow:0 8px 40px rgba(0,0,0,.6);overflow:hidden;}
+#searchInputWrap{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);}
+#searchInput{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;font-family:var(--mono);}
+#searchInput::placeholder{color:var(--muted);}
+#searchCloseBtn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1;}
+#searchCloseBtn:hover{color:var(--text);background:var(--surface2);}
+#searchResults{max-height:360px;overflow-y:auto;}
+.search-result-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-item:hover,.search-result-item.active{background:var(--surface2);}
+.search-result-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.search-result-name{font-size:13px;color:var(--text);font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.search-result-meta{font-size:11px;color:var(--muted);white-space:nowrap;}
+.search-result-freq{font-size:11px;font-family:var(--mono);color:var(--accent3);white-space:nowrap;}
+.search-empty{padding:24px;text-align:center;color:var(--muted);font-size:13px;}
+#searchFloatBtn{position:absolute;bottom:24px;right:24px;z-index:700;width:44px;height:44px;border-radius:50%;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);box-shadow:var(--shadow-float);color:var(--accent);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s,transform .15s;}
+#searchFloatBtn:hover{background:var(--surface2);border-color:var(--accent);transform:scale(1.08);}
+@media(max-width:700px){#searchFloatBtn{bottom:80px;right:14px;width:40px;height:40px;font-size:18px;}}
+
+/* ── Topo Modal ── */
+#topoModal{position:absolute;inset:0;z-index:1200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;}
+#topoModal.open{display:flex;}
+#topoBox{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:min(680px,95vw);box-shadow:0 10px 50px rgba(0,0,0,.7);overflow:hidden;display:flex;flex-direction:column;}
+#topoHeader{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+#topoTitle{flex:1;font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#topoCloseBtn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 8px;border-radius:4px;}
+#topoCloseBtn:hover{color:var(--text);background:var(--surface2);}
+#topoBody{padding:16px;flex:1;min-height:0;}
+#topoCanvas{width:100%;border-radius:8px;display:block;}
+#topoMeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.topo-chip{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);}
+.topo-chip b{color:var(--text);}
+#topoLoading{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
+#topoError{text-align:center;padding:32px 20px;color:#ef4444;font-size:13px;}
 .compass-btn{color:var(--text)}
 .compass-btn:hover{border-color:var(--accent);color:var(--accent)}
 .compass-btn.rotated{border-color:var(--accent);color:var(--accent)}
@@ -621,6 +659,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   </div>
 
   <div class="map-controls" id="mapControls">
+    <button class="map-ctrl-btn" id="searchDesktopBtn" title="Cari site / frekuensi" onclick="openSearch()" style="font-size:15px">&#128269;</button>
     <button class="map-ctrl-btn" id="locBtn" title="Lokasi saya">&#9678;</button>
     <button class="map-ctrl-btn compass-btn" id="compassBtn" title="Reset rotasi peta">
       <svg id="compassNeedle" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -695,6 +734,36 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
       </svg>
     </div>
     <div class="mob-fab-btn accent" id="mobLocBtn" onclick="mobToggleGPS()">&#9678;</div>
+    <div class="mob-fab-btn" onclick="openSearch()" title="Cari site" style="font-size:17px">&#128269;</div>
+  </div>
+
+  <!-- Search Overlay -->
+  <div id="searchOverlay" onclick="closeSearch(event)">
+    <div id="searchBox">
+      <div id="searchInputWrap">
+        <span style="color:var(--muted);font-size:16px">&#128269;</span>
+        <input id="searchInput" type="text" placeholder="Cari nama site atau frekuensi TX (MHz)&#8230;" autocomplete="off" oninput="runSearch(this.value)" onkeydown="searchKeyNav(event)">
+        <button id="searchCloseBtn" onclick="closeSearch()">&#10005;</button>
+      </div>
+      <div id="searchResults"><div class="search-empty">Ketik nama site atau frekuensi&#8230;</div></div>
+    </div>
+  </div>
+
+  <!-- Topo Modal -->
+  <div id="topoModal" onclick="closeTopoModal(event)">
+    <div id="topoBox">
+      <div id="topoHeader">
+        <span style="font-size:16px">&#127956;</span>
+        <span id="topoTitle">Profil Terrain</span>
+        <button id="topoCloseBtn" onclick="closeTopoModal()">&#10005;</button>
+      </div>
+      <div id="topoBody">
+        <div id="topoLoading">&#8987; Mengambil data elevasi&#8230;</div>
+        <canvas id="topoCanvas" style="display:none"></canvas>
+        <div id="topoMeta" style="display:none"></div>
+        <div id="topoError" style="display:none"></div>
+      </div>
+    </div>
   </div>
 
   <div class="mob-bar" id="mobBar">
@@ -1796,6 +1865,328 @@ map.on('click',()=>{mobCloseSheet();});
   panel.addEventListener('touchmove',(ev)=>{if(!dragging)return;const dy=ev.touches[0].clientY-startY;if(dy>0)panel.style.transform=`translateY(${dy}px)`;},{passive:true});
   panel.addEventListener('touchend',(ev)=>{if(!dragging)return;dragging=false;const dy=(ev.changedTouches[0]?.clientY||0)-startY;panel.style.transform='';if(dy>80)closePanel();});
 })();
+
+/* ══════════════════════════════════════════
+   FITUR 1: SEARCH SITE / FREKUENSI TX
+══════════════════════════════════════════ */
+let _searchIdx=0;
+function openSearch(){
+  document.getElementById('searchOverlay').classList.add('open');
+  const inp=document.getElementById('searchInput');
+  inp.value='';
+  document.getElementById('searchResults').innerHTML='<div class="search-empty">Ketik nama site atau frekuensi&#8230;</div>';
+  setTimeout(()=>inp.focus(),80);
+}
+function closeSearch(ev){
+  if(ev&&ev.target!==document.getElementById('searchOverlay'))return;
+  document.getElementById('searchOverlay').classList.remove('open');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('searchOverlay').classList.remove('open');});
+
+function runSearch(q){
+  q=q.trim();
+  const box=document.getElementById('searchResults');
+  if(!q){box.innerHTML='<div class="search-empty">Ketik nama site atau frekuensi&#8230;</div>';return;}
+  const ql=q.toLowerCase();
+  const isFreq=/^\d/.test(q); // mulai dari angka → cari frekuensi
+  const results=[];
+  const seen=new Set();
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId))continue;
+    const color=clientColorMap[+clntId]||'#00e5ff';
+    for(const site of data.sites){
+      if(site.ghost)continue;
+      let matched=false;let matchFreqs=[];
+      if(!isFreq){
+        // cari nama site (label atau stn_name)
+        if(site.label.toLowerCase().includes(ql))matched=true;
+        if(!matched){for(const r of site.isr){if((r.stn_name||'').toLowerCase().includes(ql)){matched=true;break;}}}
+      } else {
+        // cari frekuensi TX
+        for(const r of site.isr){
+          const f=String(r.freq||'');
+          if(f.includes(q)){matched=true;matchFreqs.push(r.freq);}
+        }
+      }
+      if(matched&&!seen.has(site.id)){
+        seen.add(site.id);
+        const freqList=[...new Set(site.isr.filter(r=>r.freq).map(r=>r.freq))].slice(0,3);
+        results.push({site,color,clntId:+clntId,matchFreqs:matchFreqs.length?matchFreqs:freqList});
+        if(results.length>=50)break;
+      }
+    }
+    if(results.length>=50)break;
+  }
+  if(!results.length){box.innerHTML='<div class="search-empty">Tidak ada site ditemukan.</div>';return;}
+  _searchIdx=0;
+  box.innerHTML=results.map((r,i)=>{
+    const freqStr=r.matchFreqs.length?r.matchFreqs.slice(0,2).join(', ')+' MHz':'';
+    return `<div class="search-result-item${i===0?' active':''}" data-siteid="${r.site.id}" onclick="searchJump('${r.site.id}')">
+      <div class="search-result-dot" style="background:${r.color}"></div>
+      <div class="search-result-name">${esc(r.site.label)}</div>
+      ${freqStr?`<div class="search-result-freq">${esc(freqStr)}</div>`:''}
+      <div class="search-result-meta">${r.site.isr.length} ISR</div>
+    </div>`;
+  }).join('');
+}
+
+function searchKeyNav(e){
+  const items=[...document.querySelectorAll('.search-result-item')];
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();items[_searchIdx]?.classList.remove('active');_searchIdx=Math.min(_searchIdx+1,items.length-1);items[_searchIdx]?.classList.add('active');items[_searchIdx]?.scrollIntoView({block:'nearest'});}
+  else if(e.key==='ArrowUp'){e.preventDefault();items[_searchIdx]?.classList.remove('active');_searchIdx=Math.max(_searchIdx-1,0);items[_searchIdx]?.classList.add('active');items[_searchIdx]?.scrollIntoView({block:'nearest'});}
+  else if(e.key==='Enter'){const active=items[_searchIdx];if(active)searchJump(active.dataset.siteid);}
+}
+
+function searchJump(siteId){
+  document.getElementById('searchOverlay').classList.remove('open');
+  const site=sitesIndex[siteId];
+  if(!site)return;
+  map.setView([site.lat,site.lng],16,{animate:true});
+  setTimeout(()=>selectSite(siteId),300);
+}
+
+/* ══════════════════════════════════════════
+   FITUR 2: TOPO VIEW — profil terrain antara 2 site
+══════════════════════════════════════════ */
+function openTopoModal(edge){
+  const modal=document.getElementById('topoModal');
+  const canvas=document.getElementById('topoCanvas');
+  const loading=document.getElementById('topoLoading');
+  const errEl=document.getElementById('topoError');
+  const metaEl=document.getElementById('topoMeta');
+  const titleEl=document.getElementById('topoTitle');
+  canvas.style.display='none';metaEl.style.display='none';errEl.style.display='none';
+  loading.style.display='block';loading.textContent='⏳ Mengambil data elevasi…';
+  titleEl.textContent=`${edge.siteA.label}  ↔  ${edge.siteB.label}`;
+  modal.classList.add('open');
+  fetchTopoAndDraw(edge).catch(err=>{
+    loading.style.display='none';
+    errEl.style.display='block';
+    errEl.textContent='⚠️ Gagal mengambil data elevasi: '+err.message;
+  });
+}
+
+function closeTopoModal(ev){
+  if(ev&&ev.target!==document.getElementById('topoModal'))return;
+  document.getElementById('topoModal').classList.remove('open');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('topoModal').classList.remove('open');});
+
+async function fetchTopoAndDraw(edge){
+  const a=edge.siteA,b=edge.siteB;
+  // Buat 50 titik sepanjang garis A→B
+  const N=50;
+  const pts=[];
+  for(let i=0;i<=N;i++){
+    const t=i/N;
+    pts.push({latitude:a.lat+t*(b.lat-a.lat),longitude:a.lng+t*(b.lng-a.lng)});
+  }
+  // Open-Elevation API (batch POST)
+  const resp=await fetch('https://api.open-elevation.com/api/v1/lookup',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({locations:pts})
+  });
+  if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+  const data=await resp.json();
+  const elevations=data.results.map(r=>r.elevation);
+
+  // Cari hgt_ant dari mwlinks edge
+  const mw=edge.mwlinks[0]||{};
+  const hgtA=mw.hgt_ant||0;
+  // Cari ISR lawan untuk hgt_ant sisi B
+  let hgtB=0;
+  const clntId=findClientOfSite(b.id);
+  if(clntId&&allLayersData[clntId]){
+    const bSite=allLayersData[clntId].data?.sites?.find(s=>s.id===b.id)||
+      Object.values(allLayersData).map(d=>d.sites.find(s=>s.id===b.id)).find(Boolean);
+    if(bSite){const bMw=bSite.isr.find(r=>r.link_id==mw.link_id);if(bMw)hgtB=bMw.hgt_ant||0;}
+  }
+  // fallback: cari dari currentEdges
+  if(!hgtB){
+    const counterMw=b.isr.find(r=>r.link_id==mw.link_id);
+    if(counterMw)hgtB=counterMw.hgt_ant||0;
+  }
+
+  const distKm=haversineM(a.lat,a.lng,b.lat,b.lng)/1000;
+  const xs=pts.map((_,i)=>i/N*distKm);
+
+  // Tinggi antena absolut (elevasi tanah + hgt_ant)
+  const antAElev=elevations[0]+(hgtA||0);
+  const antBElev=elevations[N]+(hgtB||0);
+
+  drawTopoChart(xs,elevations,antAElev,antBElev,{
+    labelA:a.label,labelB:b.label,
+    hgtA,hgtB,
+    elA:elevations[0],elB:elevations[N],
+    distKm
+  });
+}
+
+function drawTopoChart(xs,elevs,antAElev,antBElev,info){
+  const loading=document.getElementById('topoLoading');
+  const canvas=document.getElementById('topoCanvas');
+  const metaEl=document.getElementById('topoMeta');
+
+  loading.style.display='none';
+  canvas.style.display='block';
+  metaEl.style.display='flex';
+
+  // Sesuaikan ukuran canvas
+  const boxW=document.getElementById('topoBody').clientWidth-32;
+  const H=220;
+  canvas.width=boxW*window.devicePixelRatio;
+  canvas.height=H*window.devicePixelRatio;
+  canvas.style.width=boxW+'px';
+  canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  const W=boxW;
+
+  // Warna dari CSS vars (pakai fallback karena canvas tidak bisa baca CSS var)
+  const isDark=document.body.getAttribute('data-theme')!=='bright';
+  const COL={
+    terrain: isDark?'#334155':'#94a3b8',
+    terrainFill: isDark?'rgba(51,65,85,0.6)':'rgba(148,163,184,0.35)',
+    los: '#22d3ee',
+    antA: '#a78bfa',
+    antB: '#f472b6',
+    text: isDark?'#e2e8f0':'#1e293b',
+    muted: isDark?'#64748b':'#94a3b8',
+    grid: isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.07)',
+  };
+
+  const PAD={l:52,r:20,t:20,b:36};
+  const CW=W-PAD.l-PAD.r,CH=H-PAD.t-PAD.b;
+
+  // Skala Y: min-max dari elevasi + sedikit ruang atas untuk antena
+  const allY=[...elevs,antAElev,antBElev];
+  const minY=Math.min(...allY)-5;
+  const maxY=Math.max(...allY)+15;
+  const rangeY=maxY-minY||1;
+  const rangeX=xs[xs.length-1]||1;
+
+  function tx(x){return PAD.l+x/rangeX*CW;}
+  function ty(y){return PAD.t+CH-(y-minY)/rangeY*CH;}
+
+  // Grid
+  ctx.strokeStyle=COL.grid;ctx.lineWidth=1;
+  const yTicks=5;
+  for(let i=0;i<=yTicks;i++){
+    const yv=minY+i/yTicks*rangeY;
+    const yp=ty(yv);
+    ctx.beginPath();ctx.moveTo(PAD.l,yp);ctx.lineTo(PAD.l+CW,yp);ctx.stroke();
+    ctx.fillStyle=COL.muted;ctx.font=`10px monospace`;ctx.textAlign='right';
+    ctx.fillText(Math.round(yv)+'m',PAD.l-5,yp+4);
+  }
+
+  // Profil terrain (fill + stroke)
+  ctx.beginPath();
+  ctx.moveTo(tx(xs[0]),ty(elevs[0]));
+  for(let i=1;i<xs.length;i++)ctx.lineTo(tx(xs[i]),ty(elevs[i]));
+  ctx.lineTo(tx(xs[xs.length-1]),PAD.t+CH);
+  ctx.lineTo(tx(xs[0]),PAD.t+CH);
+  ctx.closePath();
+  ctx.fillStyle=COL.terrainFill;ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(tx(xs[0]),ty(elevs[0]));
+  for(let i=1;i<xs.length;i++)ctx.lineTo(tx(xs[i]),ty(elevs[i]));
+  ctx.strokeStyle=COL.terrain;ctx.lineWidth=2;ctx.stroke();
+
+  // Garis LOS antena A → antena B
+  ctx.beginPath();
+  ctx.moveTo(tx(xs[0]),ty(antAElev));
+  ctx.lineTo(tx(xs[xs.length-1]),ty(antBElev));
+  ctx.strokeStyle=COL.los;ctx.lineWidth=1.5;ctx.setLineDash([6,4]);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tiang antena A
+  ctx.beginPath();
+  ctx.moveTo(tx(xs[0]),ty(elevs[0]));
+  ctx.lineTo(tx(xs[0]),ty(antAElev));
+  ctx.strokeStyle=COL.antA;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(tx(xs[0]),ty(antAElev),4,0,Math.PI*2);
+  ctx.fillStyle=COL.antA;ctx.fill();
+
+  // Tiang antena B
+  const lastX=xs[xs.length-1];
+  ctx.beginPath();
+  ctx.moveTo(tx(lastX),ty(elevs[elevs.length-1]));
+  ctx.lineTo(tx(lastX),ty(antBElev));
+  ctx.strokeStyle=COL.antB;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(tx(lastX),ty(antBElev),4,0,Math.PI*2);
+  ctx.fillStyle=COL.antB;ctx.fill();
+
+  // Label sumbu X
+  ctx.fillStyle=COL.muted;ctx.font='10px monospace';ctx.textAlign='center';
+  const xTicks=[0,0.25,0.5,0.75,1];
+  xTicks.forEach(t=>{
+    const xv=t*rangeX;
+    ctx.fillText(xv.toFixed(1)+'km',tx(xv),PAD.t+CH+14);
+  });
+
+  // Label site
+  ctx.font='bold 11px sans-serif';ctx.textAlign='left';ctx.fillStyle=COL.antA;
+  ctx.fillText(info.labelA.substring(0,18),PAD.l+2,PAD.t+12);
+  ctx.textAlign='right';ctx.fillStyle=COL.antB;
+  ctx.fillText(info.labelB.substring(0,18),PAD.l+CW-2,PAD.t+12);
+
+  // Meta chips
+  metaEl.innerHTML=`
+    <div class="topo-chip">Jarak: <b>${info.distKm.toFixed(2)} km</b></div>
+    <div class="topo-chip">Elev A: <b>${info.elA} m</b> + ANT <b>${info.hgtA||0} m</b></div>
+    <div class="topo-chip">Elev B: <b>${info.elB} m</b> + ANT <b>${info.hgtB||0} m</b></div>
+    <div class="topo-chip" style="color:var(--accent3)"><span style="color:#22d3ee">──</span> LOS antena</div>
+  `;
+}
+
+// Pasang event klik pada hitbox edge untuk buka topo
+// Dipanggil ulang setiap kali renderAllVisible jalan
+const _origRenderAllVisible=renderAllVisible;
+// Override hitbox click di renderAllVisible — inject after edge hitbox creation
+// Lebih aman: patch saat edge dibuat
+function _patchEdgeHitboxes(){
+  for(const [clntId,data] of Object.entries(allLayersData)){
+    if(!selectedIds.has(+clntId))continue;
+    data.edges.forEach(e=>{
+      if(!e.hitbox||e._topoPatchDone)return;
+      e._topoPatchDone=true;
+      e.hitbox.on('contextmenu',(ev)=>{
+        L.DomEvent.stopPropagation(ev);
+        openTopoModal(e);
+      });
+      // Tambah topo button di tooltip
+      e.hitbox.on('click',(ev)=>{
+        // sudah ada handler click untuk selectSite, kita tambah topo via long-press atau double-click
+      });
+      e.hitbox.on('dblclick',(ev)=>{
+        L.DomEvent.stopPropagation(ev);
+        openTopoModal(e);
+      });
+    });
+  }
+}
+
+// Patch hitbox setiap kali data berubah
+const _origScheduleEdgeDraw=scheduleEdgeDraw;
+function scheduleEdgeDraw(){_origScheduleEdgeDraw();setTimeout(_patchEdgeHitboxes,200);}
+
+// Juga override hitbox click di renderAllVisible agar topo bisa diakses via klik garis
+// Inject topo trigger ke hitbox langsung saat dibuat
+(()=>{
+  const _origRender=window.renderAllVisible;
+  // Buat wrapper: setelah render, patch hitboxes
+  // Karena renderAllVisible sudah defined, kita jadwalkan patch
+  const _oBuildMW=buildMWLinks;
+  // Cara paling aman: intercept saat hitbox dibuat — terlalu invasif
+  // Solusi: pasang event delegasi di edgeLayer
+  edgeLayer.on('add',()=>{setTimeout(_patchEdgeHitboxes,300);});
+})();
+
+// Patch dipanggil manual juga setelah renderAllVisible
+const _rv=renderAllVisible;
+window.renderAllVisible=function(...a){_rv.apply(this,a);setTimeout(_patchEdgeHitboxes,400);};
 
 </script>
 </body>
