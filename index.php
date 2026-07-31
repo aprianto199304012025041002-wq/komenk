@@ -599,7 +599,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
         </div>
         <span class="chip-caret" id="chipCaret">&#9660;</span>
       </div>
-      <div class="ms-dropdown" id="msDropdown"></div>
+      <div class="ms-dropdown" id="msDropdown" style="position:absolute;top:calc(100% + 4px);left:0;min-width:260px"></div>
     </div>
 
     <!-- Filter wilayah kab/kota -->
@@ -1253,7 +1253,7 @@ function copyText(text, btn) {
   });
 }
 
-function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');if(!isOpen){const rect=trigger.getBoundingClientRect();dd.style.position='fixed';dd.style.top=(rect.bottom+4)+'px';dd.style.left=rect.left+'px';dd.style.minWidth=Math.max(260,rect.width)+'px';const rightEdge=rect.left+260;if(rightEdge>window.innerWidth-8)dd.style.left=(window.innerWidth-260-8)+'px';}dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
+function toggleDropdown(){const dd=document.getElementById('msDropdown');const caret=document.getElementById('chipCaret');const trigger=document.getElementById('msTrigger');const isOpen=dd.classList.contains('open');closeFilterDropdown();document.getElementById('legendPanel').classList.remove('open');document.getElementById('legendBtn').classList.remove('active');document.getElementById('locPopup').classList.remove('open');dd.classList.toggle('open');caret.classList.toggle('open',!isOpen);trigger.classList.toggle('open',!isOpen);}
 /* ══════════════════════════════════════════════
    FILTER WILAYAH (kabupaten/kota)
    ══════════════════════════════════════════════ */
@@ -1420,8 +1420,8 @@ function toggleFilterDropdown(){
     }
     dd.style.left = rect.left + 'px';
     // Pastikan tidak keluar kanan layar
-    dd.style.width = rect.width + 'px';
-    const ddW = rect.width;
+    const ddW = Math.max(220, rect.width);
+    dd.style.width = ddW + 'px';
     if(rect.left + ddW > window.innerWidth - 8){
       dd.style.left = (window.innerWidth - ddW - 8) + 'px';
     }
