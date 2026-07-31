@@ -86,7 +86,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .filter-trigger.active .filter-clear{display:block}
 .filter-clear:hover{color:var(--red)}
 .filter-dropdown{
-  position:fixed;min-width:250px;
+  position:fixed;
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
   z-index:1200;display:none;flex-direction:column;
   box-shadow:var(--shadow-float);max-height:min(320px, 60vh);overflow:hidden;
@@ -1420,7 +1420,8 @@ function toggleFilterDropdown(){
     }
     dd.style.left = rect.left + 'px';
     // Pastikan tidak keluar kanan layar
-    const ddW = Math.max(250, rect.width);
+    dd.style.width = rect.width + 'px';
+    const ddW = rect.width;
     if(rect.left + ddW > window.innerWidth - 8){
       dd.style.left = (window.innerWidth - ddW - 8) + 'px';
     }
