@@ -898,7 +898,7 @@ function _drawEdges(){
       const sA=e.siteARef,sB=e.siteBRef;
       const aOk=!sA||sA.ghost||sitePassesFilter(sA);
       const bOk=!sB||sB.ghost||sitePassesFilter(sB);
-      if(!aOk&&!bOk)return;
+      if(!aOk||!bOk)return;
     }
     const pa=map.latLngToContainerPoint([e.lat1,e.lng1]);const pb=map.latLngToContainerPoint([e.lat2,e.lng2]);
     ctx.beginPath();ctx.moveTo(pa.x+pad,pa.y+pad);ctx.lineTo(pb.x+pad,pb.y+pad);
@@ -1141,7 +1141,7 @@ function edgePassesAreaFilter(e){
   if(selectedAreas.size===0)return true;
   const aOk=!e.siteA||e.siteA.ghost||sitePassesFilter(e.siteA);
   const bOk=!e.siteB||e.siteB.ghost||sitePassesFilter(e.siteB);
-  return aOk||bOk;
+  return aOk&&bOk;
 }
 
 function updateLinkLabels(activeSiteId){
@@ -1800,3 +1800,4 @@ map.on('click',()=>{mobCloseSheet();});
 </script>
 </body>
 </html>
+
