@@ -1137,8 +1137,22 @@ function updateLegend(){
   if(activeIds.length) buildMobFilterList();
 }
 
+function edgePassesAreaFilter(e){
+  if(selectedAreas.size===0)return true;
+  const aOk=!e.siteA||e.siteA.ghost||sitePassesFilter(e.siteA);
+  const bOk=!e.siteB||e.siteB.ghost||sitePassesFilter(e.siteB);
+  return aOk||bOk;
+}
+
 function updateLinkLabels(activeSiteId){
-  currentEdges.forEach(e=>{if(!e.labelMarker)return;const isConn=activeSiteId&&(e.siteA.id===activeSiteId||e.siteB.id===activeSiteId);const noSelection=!activeSiteId;const el=e.labelMarker.getElement()?.querySelector('.link-count-label');if(el){let op=0;if(showLinks)op=noSelection||isConn?1:.25;else if(isConn)op=1;el.style.opacity=op;el.style.fontWeight=isConn?'700':'400';el.style.borderColor=isConn?'currentColor':'rgba(255,255,255,.2)';}});
+  currentEdges.forEach(e=>{if(!e.labelMarker)return;
+    const el=e.labelMarker.getElement()?.querySelector('.link-count-label');if(!el)return;
+    if(!edgePassesAreaFilter(e)){el.style.opacity=0;return;}
+    const isConn=activeSiteId&&(e.siteA.id===activeSiteId||e.siteB.id===activeSiteId);
+    const noSelection=!activeSiteId;
+    let op=0;if(showLinks)op=noSelection||isConn?1:.25;else if(isConn)op=1;
+    el.style.opacity=op;el.style.fontWeight=isConn?'700':'400';el.style.borderColor=isConn?'currentColor':'rgba(255,255,255,.2)';
+  });
 }
 
 function selectSite(siteId,fromGoto=false){
@@ -1327,14 +1341,12 @@ function refreshEdgeHitboxes(){
   if(!map.hasLayer(edgeLayer))return;
   currentEdges.forEach(e=>{
     if(!e.hitbox)return;
-    const siteA=e.siteA,siteB=e.siteB;
-    // Ghost site tidak punya city, selalu dianggap lolos agar garis ke ghost ikut sisi aslinya
-    const aOk=!siteA||siteA.ghost||sitePassesFilter(siteA);
-    const bOk=!siteB||siteB.ghost||sitePassesFilter(siteB);
-    const passes=selectedAreas.size===0||aOk||bOk;
+    const passes=edgePassesAreaFilter(e);
     // Sembunyikan hitbox dengan weight:0 agar tidak bisa diklik/tooltip
     e.hitbox.setStyle({opacity:passes?0.001:0,weight:passes?20:0});
   });
+  // Label angka di tengah garis juga harus ikut filter
+  updateLinkLabels(activeSiteId);
 }
 
 /* Toggle satu kota */
