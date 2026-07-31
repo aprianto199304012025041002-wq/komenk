@@ -75,11 +75,11 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   border:1px solid var(--border);border-radius:var(--radius);
   padding:4px 8px;display:flex;align-items:center;gap:5px;
   cursor:pointer;font-size:11px;color:var(--text);transition:border .15s;
-  box-shadow:var(--shadow-float);min-width:110px;max-width:160px;height:32px;
+  box-shadow:var(--shadow-float);min-width:110px;max-width:200px;height:32px;
 }
 .filter-trigger:hover,.filter-trigger.open{border-color:var(--accent)}
 .filter-trigger.active{border-color:var(--accent2);color:var(--accent2)}
-.filter-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.filter-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .filter-caret{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0}
 .filter-caret.open{transform:rotate(180deg)}
 .filter-clear{font-size:12px;color:var(--muted);cursor:pointer;transition:color .12s;flex-shrink:0;display:none;line-height:1;padding:0 1px}
