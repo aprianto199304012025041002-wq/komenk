@@ -75,18 +75,18 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
   border:1px solid var(--border);border-radius:var(--radius);
   padding:4px 8px;display:flex;align-items:center;gap:5px;
   cursor:pointer;font-size:11px;color:var(--text);transition:border .15s;
-  box-shadow:var(--shadow-float);min-width:110px;max-width:160px;height:32px;
+  box-shadow:var(--shadow-float);min-width:110px;max-width:200px;height:32px;
 }
 .filter-trigger:hover,.filter-trigger.open{border-color:var(--accent)}
 .filter-trigger.active{border-color:var(--accent2);color:var(--accent2)}
-.filter-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.filter-label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .filter-caret{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0}
 .filter-caret.open{transform:rotate(180deg)}
 .filter-clear{font-size:12px;color:var(--muted);cursor:pointer;transition:color .12s;flex-shrink:0;display:none;line-height:1;padding:0 1px}
 .filter-trigger.active .filter-clear{display:block}
 .filter-clear:hover{color:var(--red)}
 .filter-dropdown{
-  position:fixed;min-width:250px;
+  position:fixed;
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
   z-index:1200;display:none;flex-direction:column;
   box-shadow:var(--shadow-float);max-height:min(320px, 60vh);overflow:hidden;
@@ -1137,8 +1137,22 @@ function updateLegend(){
   if(activeIds.length) buildMobFilterList();
 }
 
+function edgePassesAreaFilter(e){
+  if(selectedAreas.size===0)return true;
+  const aOk=!e.siteA||e.siteA.ghost||sitePassesFilter(e.siteA);
+  const bOk=!e.siteB||e.siteB.ghost||sitePassesFilter(e.siteB);
+  return aOk||bOk;
+}
+
 function updateLinkLabels(activeSiteId){
-  currentEdges.forEach(e=>{if(!e.labelMarker)return;const isConn=activeSiteId&&(e.siteA.id===activeSiteId||e.siteB.id===activeSiteId);const noSelection=!activeSiteId;const el=e.labelMarker.getElement()?.querySelector('.link-count-label');if(el){let op=0;if(showLinks)op=noSelection||isConn?1:.25;else if(isConn)op=1;el.style.opacity=op;el.style.fontWeight=isConn?'700':'400';el.style.borderColor=isConn?'currentColor':'rgba(255,255,255,.2)';}});
+  currentEdges.forEach(e=>{if(!e.labelMarker)return;
+    const el=e.labelMarker.getElement()?.querySelector('.link-count-label');if(!el)return;
+    if(!edgePassesAreaFilter(e)){el.style.opacity=0;return;}
+    const isConn=activeSiteId&&(e.siteA.id===activeSiteId||e.siteB.id===activeSiteId);
+    const noSelection=!activeSiteId;
+    let op=0;if(showLinks)op=noSelection||isConn?1:.25;else if(isConn)op=1;
+    el.style.opacity=op;el.style.fontWeight=isConn?'700':'400';el.style.borderColor=isConn?'currentColor':'rgba(255,255,255,.2)';
+  });
 }
 
 function selectSite(siteId,fromGoto=false){
@@ -1327,14 +1341,12 @@ function refreshEdgeHitboxes(){
   if(!map.hasLayer(edgeLayer))return;
   currentEdges.forEach(e=>{
     if(!e.hitbox)return;
-    const siteA=e.siteA,siteB=e.siteB;
-    // Ghost site tidak punya city, selalu dianggap lolos agar garis ke ghost ikut sisi aslinya
-    const aOk=!siteA||siteA.ghost||sitePassesFilter(siteA);
-    const bOk=!siteB||siteB.ghost||sitePassesFilter(siteB);
-    const passes=selectedAreas.size===0||aOk||bOk;
+    const passes=edgePassesAreaFilter(e);
     // Sembunyikan hitbox dengan weight:0 agar tidak bisa diklik/tooltip
     e.hitbox.setStyle({opacity:passes?0.001:0,weight:passes?20:0});
   });
+  // Label angka di tengah garis juga harus ikut filter
+  updateLinkLabels(activeSiteId);
 }
 
 /* Toggle satu kota */
@@ -1408,7 +1420,8 @@ function toggleFilterDropdown(){
     }
     dd.style.left = rect.left + 'px';
     // Pastikan tidak keluar kanan layar
-    const ddW = Math.max(250, rect.width);
+    dd.style.width = rect.width + 'px';
+    const ddW = rect.width;
     if(rect.left + ddW > window.innerWidth - 8){
       dd.style.left = (window.innerWidth - ddW - 8) + 'px';
     }
@@ -1583,7 +1596,7 @@ async function loadClients(){
 
 function setLinkVisibility(checked){
   showLinks=checked;const lt=document.getElementById('linkToggle');if(lt)lt.checked=checked;const mlt=document.getElementById('mobLinkToggle');if(mlt)mlt.checked=checked;
-  if(showLinks){_activeDrawSiteIds=null;if(!map.hasLayer(edgeLayer))edgeLayer.addTo(map);if(!map.hasLayer(linkLabelsLayer))linkLabelsLayer.addTo(map);edgeCanvasVisible=true;scheduleEdgeDraw();}
+  if(showLinks){_activeDrawSiteIds=null;if(!map.hasLayer(edgeLayer))edgeLayer.addTo(map);if(!map.hasLayer(linkLabelsLayer))linkLabelsLayer.addTo(map);edgeCanvasVisible=true;refreshEdgeHitboxes();scheduleEdgeDraw();}
   else{if(map.hasLayer(edgeLayer))map.removeLayer(edgeLayer);if(map.hasLayer(linkLabelsLayer))map.removeLayer(linkLabelsLayer);edgeCanvasVisible=false;scheduleEdgeDraw();}
 }
 document.getElementById('linkToggle').addEventListener('change',function(){setLinkVisibility(this.checked);});
