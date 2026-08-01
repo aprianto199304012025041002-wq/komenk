@@ -2,6 +2,9 @@
 /**
  * index.php — KOMENK · Koordinat Microwave Link
  */
+require_once __DIR__ . '/includes/auth.php';
+require_login();
+$user = get_user();
 ?>
 <!DOCTYPE html>
 <html lang="id" data-theme="dark">
@@ -73,6 +76,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .logo-mark{font-family:var(--mono);font-size:13px;background:linear-gradient(135deg,var(--accent),#7dd3fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:3px;white-space:nowrap;font-weight:700;}
 .logo-sep{width:1px;height:18px;background:var(--border-hi);flex-shrink:0}
 .logo-sub{font-size:9px;color:var(--muted-hi);letter-spacing:1.5px;white-space:nowrap;text-transform:uppercase;}
+.logo-user{font-size:9px;color:var(--text);font-family:var(--mono);white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;}
+.logout-btn{font-size:14px;color:var(--muted);text-decoration:none;line-height:1;padding:2px 2px;border-radius:3px;transition:color var(--transition-fast);flex-shrink:0;}
+.logout-btn:hover{color:var(--red);}
 
 .float-controls{position:absolute;top:12px;z-index:600;display:flex;flex-direction:row;align-items:center;gap:6px;left:12px;flex-wrap:nowrap;}
 .ctrl-pill{display:flex;align-items:center;gap:5px;background:var(--glass-hi);backdrop-filter:blur(16px) saturate(160%);border:1px solid var(--border-hi);border-radius:var(--radius);padding:5px 10px;box-shadow:var(--shadow-float);font-size:11px;color:var(--muted-hi);white-space:nowrap;transition:border-color var(--transition-fast);}
@@ -663,6 +669,9 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent);
     <span class="logo-mark">KOMENK</span>
     <div class="logo-sep"></div>
     <span class="logo-sub">KOORDINAT MICROWAVE LINK</span>
+    <div class="logo-sep"></div>
+    <span class="logo-user" title="<?= htmlspecialchars($user['email']) ?>"><?= htmlspecialchars(explode(' ',$user['name'])[0]) ?></span>
+    <a href="/logout.php" class="logout-btn" title="Keluar (<?= htmlspecialchars($user['email']) ?>)">&#x23FB;</a>
   </div>
 
   <div class="float-controls" id="floatControls">
