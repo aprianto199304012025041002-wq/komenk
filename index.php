@@ -217,17 +217,9 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 #topoLoading{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
 #topoError{text-align:center;padding:32px 20px;color:#ef4444;font-size:13px;}
 
-/* ── Edge Popup (mobile: klik garis) ── */
-#edgePopup{position:absolute;z-index:900;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);padding:10px 12px;display:none;flex-direction:column;gap:8px;min-width:200px;max-width:260px;pointer-events:auto;}
-#edgePopup.open{display:flex;}
-#edgePopupTitle{font-size:11px;color:var(--muted);line-height:1.4;}
-#edgePopupTitle b{color:var(--text);display:block;font-size:12px;}
-#edgePopupBtns{display:flex;gap:6px;}
-.ep-btn{flex:1;padding:7px 0;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;text-align:center;transition:background .12s,border-color .15s;}
-.ep-btn:hover,.ep-btn:active{background:var(--surface);border-color:var(--accent);}
-.ep-btn.primary{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);font-weight:600;}
-.ep-btn.primary:hover,.ep-btn.primary:active{background:rgba(0,229,255,.2);}
-#edgePopupClose{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;}
+/* ── Topo btn di panel ── */
+.topo-panel-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;width:100%;padding:8px 12px;border:1px solid var(--accent3);border-radius:6px;background:rgba(167,139,250,.07);color:var(--accent3);font-size:12px;font-weight:600;cursor:pointer;transition:background .12s,border-color .15s;}
+.topo-panel-btn:hover,.topo-panel-btn:active{background:rgba(167,139,250,.15);}
 .compass-btn{color:var(--text)}
 .compass-btn:hover{border-color:var(--accent);color:var(--accent)}
 .compass-btn.rotated{border-color:var(--accent);color:var(--accent)}
@@ -763,16 +755,6 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 
   <!-- Topo Modal -->
   <div id="topoModal" onclick="closeTopoModal(event)">
-
-  <!-- Edge Popup (klik garis di mobile) -->
-  <div id="edgePopup">
-    <button id="edgePopupClose" onclick="closeEdgePopup()">&#10005;</button>
-    <div id="edgePopupTitle"><b id="edgePopupSites"></b><span id="edgePopupMeta"></span></div>
-    <div id="edgePopupBtns">
-      <button class="ep-btn" onclick="_edgePopupGotoA()">&#8594; Site A</button>
-      <button class="ep-btn primary" onclick="_edgePopupTopo()">&#127956; Topo</button>
-    </div>
-  </div>
     <div id="topoBox">
       <div id="topoHeader">
         <span style="font-size:16px">&#127956;</span>
@@ -1296,7 +1278,7 @@ function showSitePanel(site){
         const infoBar=`<div class="link-info-bar"><div class="info-chip"><span class="info-chip-label">Azimuth</span><span class="info-chip-val">${mw.azim!=null?mw.azim+'\u00B0':'\u2014'}</span></div><div class="info-chip"><span class="info-chip-label">Jarak</span><span class="info-chip-val">${(cs.lat&&cs.lng&&partner.lat&&partner.lng)?((haversineM(cs.lat,cs.lng,partner.lat,partner.lng)/1000).toFixed(2)+' km'):'\u2014'}</span></div><div class="info-chip"><span class="info-chip-label">Status ISR</span><span class="info-chip-val ${statusCls}">${esc(statusSimf)}</span></div><div class="info-chip"><span class="info-chip-label">Berlaku s.d.</span><span class="info-chip-val ${expStatus(mw.validity)==='expired'?'danger':expStatus(mw.validity)==='soon'?'warn':''}">${esc(mw.validity)||'\u2014'}</span></div></div>`;
         const antSpecs=`<div class="ant-specs"><div class="ant-half"><div class="ant-half-label">Antena</div><div class="ant-row"><span class="ant-key">H-ASL</span><span class="ant-val">${mw.h_asl!=null?mw.h_asl+' m':'\u2014'}</span></div><div class="ant-row"><span class="ant-key">Tinggi ant.</span><span class="ant-val">${mw.hgt_ant!=null?mw.hgt_ant+' m':'\u2014'}</span></div><div class="ant-row"><span class="ant-key">ERP</span><span class="ant-val">${mw.erp!=null?mw.erp+' dBm':'\u2014'}</span></div></div><div class="ant-half"><div class="ant-half-label">Perangkat</div><div class="ant-row"><span class="ant-key">Mfr</span><span class="ant-val">${esc(mw.eq_mfr)||'\u2014'}</span></div><div class="ant-row"><span class="ant-key">Model</span><span class="ant-val">${esc(mw.eq_mdl)||'\u2014'}</span></div><div class="ant-row"><span class="ant-key">Trans</span><span class="ant-val">${esc(mw.trans_type)||'\u2014'}</span></div></div></div>`;
         const extraGrid=[mw.licence_date?`<span class="k">Tgl. Lisensi</span><span class="v">${esc(mw.licence_date)}</span>`:'',mw.appl_date?`<span class="k">Tgl. Daftar</span><span class="v">${esc(mw.appl_date)}</span>`:'',mw.umur_isr?`<span class="k">Umur ISR</span><span class="v">${esc(mw.umur_isr)}</span>`:'',(mw.city||mw.province)?`<span class="k">Lokasi</span><span class="v">${esc([mw.city,mw.province].filter(Boolean).join(', '))}</span>`:''].filter(Boolean).join('');
-        return `<div class="link-row" id="mwi-${mid}"><div class="link-id-row" onclick="toggleMWLink('${mid}','${safeEid}','${partner.id}')"><span class="link-badge" style="color:${col};background:${col}18;border-color:${col}40">LINK ID \u00B7 ${esc(mw.link_id)||'\u2014'}</span><i class="mw-chevron" id="mwc-${mid}" style="margin-left:auto;color:var(--muted);font-size:13px">&#9660;</i></div><div class="isr-pair-grid"><div class="isr-half"><div class="isr-half-label">Stasiun asal</div><div class="isr-half-stn">${esc(asalData.stn)}</div><div class="isr-half-simf">${esc(asalData.simf)}<button class="copy-btn" data-copy="${asalData.simf}" title="Salin SIMF">⎘</button></div><div class="isr-half-freq"><span class="pill-tx">TX</span> ${asalData.freqTx}</div><div class="isr-half-freq"><span class="pill-rx">RX</span> ${asalData.freqRx}</div></div><div class="isr-half"><div class="isr-half-label">Stasiun lawan</div><div class="isr-half-stn">${esc(lawanData.stn)}</div><div class="isr-half-simf">${esc(lawanData.simf)}<button class="copy-btn" data-copy="${lawanData.simf}" title="Salin SIMF">⎘</button></div><div class="isr-half-freq"><span class="pill-tx">TX</span> ${lawanData.freqTx}</div><div class="isr-half-freq"><span class="pill-rx">RX</span> ${lawanData.freqRx}</div></div></div>${infoBar}${antSpecs}${extraGrid?`<div class="mw-extra-grid">${extraGrid}</div>`:''}<div class="mwlink-detail" id="mwd-${mid}">${!e.ghost?`<button class="goto-btn" onclick="gotoSite('${partner.id}')">\u2192 Lihat site lawan: ${esc(partner.label)}</button>`:''}</div></div>`;
+        return `<div class="link-row" id="mwi-${mid}"><div class="link-id-row" onclick="toggleMWLink('${mid}','${safeEid}','${partner.id}')"><span class="link-badge" style="color:${col};background:${col}18;border-color:${col}40">LINK ID \u00B7 ${esc(mw.link_id)||'\u2014'}</span><i class="mw-chevron" id="mwc-${mid}" style="margin-left:auto;color:var(--muted);font-size:13px">&#9660;</i></div><div class="isr-pair-grid"><div class="isr-half"><div class="isr-half-label">Stasiun asal</div><div class="isr-half-stn">${esc(asalData.stn)}</div><div class="isr-half-simf">${esc(asalData.simf)}<button class="copy-btn" data-copy="${asalData.simf}" title="Salin SIMF">⎘</button></div><div class="isr-half-freq"><span class="pill-tx">TX</span> ${asalData.freqTx}</div><div class="isr-half-freq"><span class="pill-rx">RX</span> ${asalData.freqRx}</div></div><div class="isr-half"><div class="isr-half-label">Stasiun lawan</div><div class="isr-half-stn">${esc(lawanData.stn)}</div><div class="isr-half-simf">${esc(lawanData.simf)}<button class="copy-btn" data-copy="${lawanData.simf}" title="Salin SIMF">⎘</button></div><div class="isr-half-freq"><span class="pill-tx">TX</span> ${lawanData.freqTx}</div><div class="isr-half-freq"><span class="pill-rx">RX</span> ${lawanData.freqRx}</div></div></div>${infoBar}${antSpecs}${extraGrid?`<div class="mw-extra-grid">${extraGrid}</div>`:''}<div class="mwlink-detail" id="mwd-${mid}">${!e.ghost?`<button class="goto-btn" onclick="gotoSite('${partner.id}')">\u2192 Lihat site lawan: ${esc(partner.label)}</button>`:''}<button class="topo-panel-btn" onclick="openTopoFromEdgeId(\'${e.id}\')">&#127956; Lihat Profil Terrain</button></div></div>`;
       }).join('');
       const isFirst=ei===0;return `<div class="lawan-group" id="${gid}"><div class="lawan-header" onclick="toggleLawanGroup('${gid}')"><div class="lawan-dot ${e.ghost?'ghost':''}" style="background:${partnerColor}"></div><div class="lawan-name">${esc(partner.label)}</div><span class="lawan-count">${e.mwlinks.length} link</span><span class="lawan-chevron${isFirst?' open':''}" >&#9660;</span></div><div class="lawan-links" id="${gid}-links" style="display:${isFirst?'flex':'none'}">${linksHtml}</div></div>`;
     }).join('');
@@ -2163,53 +2145,24 @@ function drawTopoChart(xs,elevs,antAElev,antBElev,info){
   `;
 }
 
-/* ── Edge Popup (mobile: klik garis) ── */
-let _edgePopupEdge=null;
-function closeEdgePopup(){document.getElementById('edgePopup').classList.remove('open');_edgePopupEdge=null;}
-function _edgePopupTopo(){const e=_edgePopupEdge;closeEdgePopup();if(e)openTopoModal(e);}
-function _edgePopupGotoA(){const e=_edgePopupEdge;closeEdgePopup();if(e)selectSite(e.siteA.id);}
-function openEdgePopup(e,latlng){
-  _edgePopupEdge=e;
-  document.getElementById('edgePopupSites').textContent=`${e.siteA.label} \u2194 ${e.siteB.label}`;
-  document.getElementById('edgePopupMeta').textContent=`${e.mwlinks.length} MWLink`;
-  const popup=document.getElementById('edgePopup');
-  popup.classList.add('open');
-  // Posisikan popup di atas titik klik
-  setTimeout(()=>{
-    const pt=map.latLngToContainerPoint(latlng);
-    const mapEl=document.getElementById('map');
-    const pw=popup.offsetWidth||220,ph=popup.offsetHeight||90;
-    let left=pt.x-pw/2,top=pt.y-ph-14;
-    left=Math.max(8,Math.min(left,mapEl.clientWidth-pw-8));
-    top=Math.max(8,top);
-    popup.style.left=left+'px';popup.style.top=top+'px';
-  },0);
+/* ── Topo via panel detail ── */
+function openTopoFromEdgeId(edgeId){
+  const e=edgesIndex[edgeId];
+  if(e)openTopoModal(e);
 }
-map.on('click',()=>closeEdgePopup());
 
-// Pasang topo event pada hitbox edge (dipanggil setelah render)
+// Pasang dblclick/rightclick topo pada hitbox edge (desktop)
 function _patchEdgeHitboxes(){
   for(const [clntId,data] of Object.entries(allLayersData)){
     if(!selectedIds.has(+clntId))continue;
     data.edges.forEach(e=>{
       if(!e.hitbox||e._topoPatchDone)return;
       e._topoPatchDone=true;
-      // Desktop: dblclick / rightclick → langsung topo
       e.hitbox.on('dblclick',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
       e.hitbox.on('contextmenu',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
-      // Click: mobile → popup, desktop → selectSite (seperti sebelumnya)
-      e.hitbox.on('click',(ev)=>{
-        L.DomEvent.stopPropagation(ev);
-        if(window.matchMedia('(pointer:coarse)').matches){
-          openEdgePopup(e,ev.latlng);
-        } else {
-          selectSite(e.siteA.id);
-        }
-      });
     });
   }
 }
-// Hook ke edgeLayer agar patch berjalan setelah edge digambar
 edgeLayer.on('layeradd',()=>setTimeout(_patchEdgeHitboxes,300));
 
 </script>
