@@ -243,6 +243,11 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent);
 #topoLoading{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
 #topoError{text-align:center;padding:32px 20px;color:#ef4444;font-size:13px;}
 
+/* ── Offline banner ── */
+#offlineBanner{position:absolute;top:0;left:0;right:0;z-index:2000;background:#ef4444;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:7px 16px;letter-spacing:.4px;display:none;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 12px rgba(239,68,68,.4);}
+#offlineBanner.show{display:flex;}
+#offlineBanner.back{background:var(--green);box-shadow:0 2px 12px rgba(34,197,94,.4);}
+
 /* ── Topo btn di panel ── */
 .topo-panel-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;width:100%;padding:9px 12px;border:1px solid var(--border-hi);border-radius:var(--radius);background:var(--accent3-glow);color:var(--accent3);font-size:12px;font-weight:600;cursor:pointer;transition:background var(--transition-fast),border-color var(--transition-fast),box-shadow var(--transition-fast);letter-spacing:.3px;}
 .topo-panel-btn:hover,.topo-panel-btn:active{background:rgba(167,139,250,.18);border-color:var(--accent3);box-shadow:0 0 16px var(--accent3-glow);}
@@ -704,7 +709,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent);
         <div class="filter-search-wrap">
           <input type="text" class="filter-search-input" id="filterSearchInput"
             placeholder="Cari kota/kabupaten&#8230;"
-            oninput="filterAreaList(this.value)">
+            oninput="filterAreaDebounced(this.value)">
         </div>
         <div class="filter-list" id="filterList"></div>
       </div>
@@ -790,12 +795,15 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent);
     <div class="mob-fab-btn" onclick="openSearch()" title="Cari site" style="font-size:17px">&#128269;</div>
   </div>
 
+  <!-- Offline Banner -->
+  <div id="offlineBanner">&#128683; Tidak ada koneksi internet</div>
+
   <!-- Search Overlay -->
   <div id="searchOverlay" onclick="closeSearch(event)">
     <div id="searchBox">
       <div id="searchInputWrap">
         <span style="color:var(--muted);font-size:16px">&#128269;</span>
-        <input id="searchInput" type="text" placeholder="Cari nama site atau frekuensi TX (MHz)&#8230;" autocomplete="off" oninput="runSearch(this.value)" onkeydown="searchKeyNav(event)">
+        <input id="searchInput" type="text" placeholder="Cari nama site atau frekuensi TX (MHz)&#8230;" autocomplete="off" oninput="runSearchDebounced(this.value)" onkeydown="searchKeyNav(event)">
         <button id="searchCloseBtn" onclick="closeSearch()">&#10005;</button>
       </div>
       <div id="searchResults"><div class="search-empty">Ketik nama site atau frekuensi&#8230;</div></div>
@@ -889,7 +897,7 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent);
         </div>
         <input type="text" class="mob-filter-search" id="mobFilterSearch"
           placeholder="Cari kota/kabupaten&#8230;"
-          oninput="mobFilterAreaList(this.value)">
+          oninput="mobFilterAreaDebounced(this.value)">
         <div class="mob-filter-list" id="mobFilterList"></div>
       </div>
 
@@ -1586,13 +1594,13 @@ function buildDropdown(){
   const prevMobQuery = document.getElementById('mobSearchInput')?.value || '';
 
   // Desktop dropdown: search input + scrollable list
-  dd.innerHTML=`<div class="ms-search-wrap"><input type="text" class="ms-search-input" id="msSearchInput" placeholder="Cari klien\u2026" oninput="filterClientList(this.value,'msList')" value="${esc(prevDesktopQuery)}"></div><div class="ms-list-scroll" id="msList">${allItem}${items}</div>`;
+  dd.innerHTML=`<div class="ms-search-wrap"><input type="text" class="ms-search-input" id="msSearchInput" placeholder="Cari klien\u2026" oninput="filterClientDebounced(this.value,'msList')" value="${esc(prevDesktopQuery)}"></div><div class="ms-list-scroll" id="msList">${allItem}${items}</div>`;
   if(wasOpen)dd.classList.add('open');
   if(prevDesktopQuery) filterClientList(prevDesktopQuery, 'msList');
 
   // Mobile sheet: search input + list
   if(mobList){
-    mobList.innerHTML=`<div class="ms-search-wrap"><input type="text" class="ms-search-input" id="mobSearchInput" placeholder="Cari klien\u2026" oninput="filterClientList(this.value,'mobList')" value="${esc(prevMobQuery)}"></div><div id="mobListItems">${allItem}${items}</div>`;
+    mobList.innerHTML=`<div class="ms-search-wrap"><input type="text" class="ms-search-input" id="mobSearchInput" placeholder="Cari klien\u2026" oninput="filterClientDebounced(this.value,'mobList')" value="${esc(prevMobQuery)}"></div><div id="mobListItems">${allItem}${items}</div>`;
     if(prevMobQuery) filterClientList(prevMobQuery, 'mobList');
   }
 }
@@ -1652,14 +1660,30 @@ async function toggleClient(clntId){
 
 async function ensureLoaded(clntId){
   clntId=+clntId;if(allLayersData[clntId])return;let j;
-  for(let attempt=0;attempt<2;attempt++){try{const r=await fetch(`${API.isr}?clnt_id=${clntId}`,{signal:AbortSignal.timeout(20000)});j=await r.json();break;}catch(e){if(attempt===0){await new Promise(res=>setTimeout(res,1500));continue;}const overlay=document.getElementById('stateOverlay');overlay.style.display='flex';overlay.innerHTML='<span>&#9888; Gagal memuat data. Coba lagi atau refresh halaman.</span>';console.error('fetch isr error',e);return;}}
-  if(!j||!j.success){const overlay=document.getElementById('stateOverlay');overlay.style.display='flex';overlay.innerHTML=`<span>&#9888; ${j?.error||'Gagal memuat data ISR'}</span>`;return;}
+  for(let attempt=0;attempt<2;attempt++){try{const r=await fetch(`${API.isr}?clnt_id=${clntId}`,{signal:AbortSignal.timeout(20000)});if(!r.ok)throw new Error(`HTTP ${r.status}`);j=await r.json();break;}catch(e){if(attempt===0){await new Promise(res=>setTimeout(res,1500));continue;}const overlay=document.getElementById('stateOverlay');overlay.style.pointerEvents='all';overlay.style.display='flex';overlay.innerHTML=`<div style="font-size:28px">&#128683;</div><span>${navigator.onLine?'Server tidak merespons.':'Tidak ada koneksi internet.'}</span><span style="font-size:11px;opacity:.6">${e.message||''}</span><button onclick="location.reload()" style="margin-top:4px;padding:8px 20px;border-radius:6px;background:var(--accent);color:#000;font-weight:700;border:none;cursor:pointer;font-size:13px;">&#8635; Refresh</button>`;console.error('fetch isr error',e);return;}}
+  if(!j||!j.success){const overlay=document.getElementById('stateOverlay');overlay.style.pointerEvents='all';overlay.style.display='flex';overlay.innerHTML=`<div style="font-size:28px">&#9888;</div><span>${j?.error||'Gagal memuat data ISR'}</span><button onclick="location.reload()" style="margin-top:4px;padding:8px 20px;border-radius:6px;background:var(--accent);color:#000;font-weight:700;border:none;cursor:pointer;font-size:13px;">&#8635; Refresh</button>`;return;}
   const rows=j.raw||[];let sites=clusterISRtoSites(rows);sites.forEach(s=>{s.id=`c${clntId}_${s.id}`;});
   const edges=buildMWLinks(sites,rows);const connectedIds=new Set();edges.forEach(e=>{connectedIds.add(e.siteA.id);connectedIds.add(e.siteB.id);});
   sites=sites.filter(s=>!s.ghost||connectedIds.has(s.id));allLayersData[clntId]={sites,edges,rows};
 }
 
-async function ensureAllLoaded(){const overlay=document.getElementById('stateOverlay');overlay.style.display='flex';overlay.innerHTML='<div class="spinner"></div><span>Memuat semua klien\u2026</span>';await Promise.all(allClients.map(c=>ensureLoaded(c.clnt_id)));overlay.style.display='none';}
+async function ensureAllLoaded(){
+  const overlay=document.getElementById('stateOverlay');
+  const total=allClients.length;
+  let done=0;
+  const updateProgress=()=>{
+    overlay.style.display='flex';
+    overlay.style.pointerEvents='none';
+    overlay.innerHTML=`<div class="spinner"></div><span>Memuat klien ${done}/${total}&#8230;</span><div style="width:180px;height:3px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden"><div style="height:100%;width:${Math.round(done/total*100)}%;background:var(--accent);border-radius:2px;transition:width .3s"></div></div>`;
+  };
+  updateProgress();
+  await Promise.all(allClients.map(async c=>{
+    await ensureLoaded(c.clnt_id);
+    done++;
+    updateProgress();
+  }));
+  overlay.style.display='none';
+}
 
 /* ── updateFooter: tampilkan angka + spasi + satuan ── */
 function updateFooter(){
@@ -1677,8 +1701,8 @@ function toggleLegend(){const panel=document.getElementById('legendPanel');const
 
 async function loadClients(){
   let j;
-  for(let attempt=0;attempt<2;attempt++){try{const r=await fetch(API.clients,{signal:AbortSignal.timeout(10000)});j=await r.json();break;}catch(e){if(attempt===0){await new Promise(res=>setTimeout(res,1500));continue;}document.getElementById('stateOverlay').innerHTML='<span>&#9888; Koneksi ke server gagal. Refresh untuk coba lagi.</span>';return;}}
-  if(!j.success){document.getElementById('stateOverlay').innerHTML=`<span>\u26A0 ${j.error||'Gagal memuat klien'}</span>`;return;}
+  for(let attempt=0;attempt<2;attempt++){try{const r=await fetch(API.clients,{signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error(`HTTP ${r.status}`);j=await r.json();break;}catch(e){if(attempt===0){await new Promise(res=>setTimeout(res,1500));continue;}const ov=document.getElementById('stateOverlay');ov.style.pointerEvents='all';ov.innerHTML=`<div style="font-size:32px">&#127757;</div><span style="font-weight:700">${navigator.onLine?'Server tidak dapat dijangkau.':'Tidak ada koneksi internet.'}</span><span style="font-size:11px;opacity:.55">${e.message||''}</span><button onclick="location.reload()" style="margin-top:8px;padding:9px 24px;border-radius:6px;background:var(--accent);color:#000;font-weight:700;border:none;cursor:pointer;font-size:13px;">&#8635; Coba Lagi</button>`;return;}}
+  if(!j.success){const ov=document.getElementById('stateOverlay');ov.style.pointerEvents='all';ov.innerHTML=`<div style="font-size:32px">&#9888;</div><span>${j.error||'Gagal memuat daftar klien'}</span><button onclick="location.reload()" style="margin-top:8px;padding:9px 24px;border-radius:6px;background:var(--accent);color:#000;font-weight:700;border:none;cursor:pointer;font-size:13px;">&#8635; Coba Lagi</button>`;return;}
   allClients=j.data;let paletteIdx=0;
   allClients.forEach((c)=>{const named=assignClientColor(c.clnt_name);if(named){clientColorMap[+c.clnt_id]=named;}else{clientColorMap[+c.clnt_id]=CLIENT_COLORS[paletteIdx%CLIENT_COLORS.length];paletteIdx++;}});
   buildDropdown();updateChips();
@@ -1935,6 +1959,16 @@ function closeSearch(ev){
   document.getElementById('searchOverlay').classList.remove('open');
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('searchOverlay').classList.remove('open');});
+
+/* ── Debounce utility ── */
+function _debounce(fn, ms){
+  let t;
+  return function(...a){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), ms); };
+}
+const runSearchDebounced   = _debounce(runSearch, 220);
+const filterAreaDebounced  = _debounce(filterAreaList, 180);
+const filterClientDebounced= _debounce(filterClientList, 180);
+const mobFilterAreaDebounced = _debounce(mobFilterAreaList, 180);
 
 function runSearch(q){
   q=q.trim();
@@ -2213,6 +2247,26 @@ function _patchEdgeHitboxes(){
   }
 }
 edgeLayer.on('layeradd',()=>setTimeout(_patchEdgeHitboxes,300));
+
+/* ── Offline Detection ── */
+(()=>{
+  const banner=document.getElementById('offlineBanner');
+  let _hideTimer;
+  function showOffline(){
+    clearTimeout(_hideTimer);
+    banner.className='show';
+    banner.innerHTML='&#128683; Tidak ada koneksi internet';
+  }
+  function showBack(){
+    clearTimeout(_hideTimer);
+    banner.className='show back';
+    banner.innerHTML='&#9989; Koneksi kembali';
+    _hideTimer=setTimeout(()=>{banner.className='';},3000);
+  }
+  window.addEventListener('offline',showOffline);
+  window.addEventListener('online',showBack);
+  if(!navigator.onLine)showOffline();
+})();
 
 </script>
 </body>
