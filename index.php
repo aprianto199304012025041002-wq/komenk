@@ -2141,52 +2141,20 @@ function drawTopoChart(xs,elevs,antAElev,antBElev,info){
   `;
 }
 
-// Pasang event klik pada hitbox edge untuk buka topo
-// Dipanggil ulang setiap kali renderAllVisible jalan
-const _origRenderAllVisible=renderAllVisible;
-// Override hitbox click di renderAllVisible — inject after edge hitbox creation
-// Lebih aman: patch saat edge dibuat
+// Pasang topo event pada hitbox edge (dipanggil setelah render)
 function _patchEdgeHitboxes(){
   for(const [clntId,data] of Object.entries(allLayersData)){
     if(!selectedIds.has(+clntId))continue;
     data.edges.forEach(e=>{
       if(!e.hitbox||e._topoPatchDone)return;
       e._topoPatchDone=true;
-      e.hitbox.on('contextmenu',(ev)=>{
-        L.DomEvent.stopPropagation(ev);
-        openTopoModal(e);
-      });
-      // Tambah topo button di tooltip
-      e.hitbox.on('click',(ev)=>{
-        // sudah ada handler click untuk selectSite, kita tambah topo via long-press atau double-click
-      });
-      e.hitbox.on('dblclick',(ev)=>{
-        L.DomEvent.stopPropagation(ev);
-        openTopoModal(e);
-      });
+      e.hitbox.on('contextmenu',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
+      e.hitbox.on('dblclick',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
     });
   }
 }
-
-// Patch hitbox setiap kali data berubah
-const _origScheduleEdgeDraw=scheduleEdgeDraw;
-function scheduleEdgeDraw(){_origScheduleEdgeDraw();setTimeout(_patchEdgeHitboxes,200);}
-
-// Juga override hitbox click di renderAllVisible agar topo bisa diakses via klik garis
-// Inject topo trigger ke hitbox langsung saat dibuat
-(()=>{
-  const _origRender=window.renderAllVisible;
-  // Buat wrapper: setelah render, patch hitboxes
-  // Karena renderAllVisible sudah defined, kita jadwalkan patch
-  const _oBuildMW=buildMWLinks;
-  // Cara paling aman: intercept saat hitbox dibuat — terlalu invasif
-  // Solusi: pasang event delegasi di edgeLayer
-  edgeLayer.on('add',()=>{setTimeout(_patchEdgeHitboxes,300);});
-})();
-
-// Patch dipanggil manual juga setelah renderAllVisible
-const _rv=renderAllVisible;
-window.renderAllVisible=function(...a){_rv.apply(this,a);setTimeout(_patchEdgeHitboxes,400);};
+// Hook ke edgeLayer agar patch berjalan setelah edge digambar
+edgeLayer.on('layeradd',()=>setTimeout(_patchEdgeHitboxes,300));
 
 </script>
 </body>
