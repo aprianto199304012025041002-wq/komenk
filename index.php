@@ -216,6 +216,18 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 .topo-chip b{color:var(--text);}
 #topoLoading{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;}
 #topoError{text-align:center;padding:32px 20px;color:#ef4444;font-size:13px;}
+
+/* ── Edge Popup (mobile: klik garis) ── */
+#edgePopup{position:absolute;z-index:900;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);padding:10px 12px;display:none;flex-direction:column;gap:8px;min-width:200px;max-width:260px;pointer-events:auto;}
+#edgePopup.open{display:flex;}
+#edgePopupTitle{font-size:11px;color:var(--muted);line-height:1.4;}
+#edgePopupTitle b{color:var(--text);display:block;font-size:12px;}
+#edgePopupBtns{display:flex;gap:6px;}
+.ep-btn{flex:1;padding:7px 0;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;text-align:center;transition:background .12s,border-color .15s;}
+.ep-btn:hover,.ep-btn:active{background:var(--surface);border-color:var(--accent);}
+.ep-btn.primary{background:rgba(0,229,255,.1);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.ep-btn.primary:hover,.ep-btn.primary:active{background:rgba(0,229,255,.2);}
+#edgePopupClose{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;line-height:1;padding:2px 4px;}
 .compass-btn{color:var(--text)}
 .compass-btn:hover{border-color:var(--accent);color:var(--accent)}
 .compass-btn.rotated{border-color:var(--accent);color:var(--accent)}
@@ -751,6 +763,16 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent)}
 
   <!-- Topo Modal -->
   <div id="topoModal" onclick="closeTopoModal(event)">
+
+  <!-- Edge Popup (klik garis di mobile) -->
+  <div id="edgePopup">
+    <button id="edgePopupClose" onclick="closeEdgePopup()">&#10005;</button>
+    <div id="edgePopupTitle"><b id="edgePopupSites"></b><span id="edgePopupMeta"></span></div>
+    <div id="edgePopupBtns">
+      <button class="ep-btn" onclick="_edgePopupGotoA()">&#8594; Site A</button>
+      <button class="ep-btn primary" onclick="_edgePopupTopo()">&#127956; Topo</button>
+    </div>
+  </div>
     <div id="topoBox">
       <div id="topoHeader">
         <span style="font-size:16px">&#127956;</span>
@@ -2141,6 +2163,30 @@ function drawTopoChart(xs,elevs,antAElev,antBElev,info){
   `;
 }
 
+/* ── Edge Popup (mobile: klik garis) ── */
+let _edgePopupEdge=null;
+function closeEdgePopup(){document.getElementById('edgePopup').classList.remove('open');_edgePopupEdge=null;}
+function _edgePopupTopo(){const e=_edgePopupEdge;closeEdgePopup();if(e)openTopoModal(e);}
+function _edgePopupGotoA(){const e=_edgePopupEdge;closeEdgePopup();if(e)selectSite(e.siteA.id);}
+function openEdgePopup(e,latlng){
+  _edgePopupEdge=e;
+  document.getElementById('edgePopupSites').textContent=`${e.siteA.label} \u2194 ${e.siteB.label}`;
+  document.getElementById('edgePopupMeta').textContent=`${e.mwlinks.length} MWLink`;
+  const popup=document.getElementById('edgePopup');
+  popup.classList.add('open');
+  // Posisikan popup di atas titik klik
+  setTimeout(()=>{
+    const pt=map.latLngToContainerPoint(latlng);
+    const mapEl=document.getElementById('map');
+    const pw=popup.offsetWidth||220,ph=popup.offsetHeight||90;
+    let left=pt.x-pw/2,top=pt.y-ph-14;
+    left=Math.max(8,Math.min(left,mapEl.clientWidth-pw-8));
+    top=Math.max(8,top);
+    popup.style.left=left+'px';popup.style.top=top+'px';
+  },0);
+}
+map.on('click',()=>closeEdgePopup());
+
 // Pasang topo event pada hitbox edge (dipanggil setelah render)
 function _patchEdgeHitboxes(){
   for(const [clntId,data] of Object.entries(allLayersData)){
@@ -2148,8 +2194,18 @@ function _patchEdgeHitboxes(){
     data.edges.forEach(e=>{
       if(!e.hitbox||e._topoPatchDone)return;
       e._topoPatchDone=true;
-      e.hitbox.on('contextmenu',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
+      // Desktop: dblclick / rightclick → langsung topo
       e.hitbox.on('dblclick',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
+      e.hitbox.on('contextmenu',(ev)=>{L.DomEvent.stopPropagation(ev);openTopoModal(e);});
+      // Click: mobile → popup, desktop → selectSite (seperti sebelumnya)
+      e.hitbox.on('click',(ev)=>{
+        L.DomEvent.stopPropagation(ev);
+        if(window.matchMedia('(pointer:coarse)').matches){
+          openEdgePopup(e,ev.latlng);
+        } else {
+          selectSite(e.siteA.id);
+        }
+      });
     });
   }
 }
