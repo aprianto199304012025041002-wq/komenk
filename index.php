@@ -861,9 +861,14 @@ input:checked+.tog-s:before{transform:translateX(14px);background:var(--accent);
 
   <div class="mob-drawer" id="mobDrawer">
     <div class="mob-drawer-head">
-      <div>
+      <div style="flex:1;min-width:0;">
         <div class="mob-drawer-logo">KOMENK</div>
         <div class="mob-drawer-sub">KOORDINAT MICROWAVE LINK</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);font-family:var(--mono);letter-spacing:.5px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($user['name']) ?></div>
+        <div style="font-size:9px;color:var(--muted-hi);letter-spacing:.3px;margin-top:2px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($user['email']) ?></div>
+        <a href="/logout.php" style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:10px;color:var(--red);text-decoration:none;font-family:var(--mono);letter-spacing:.5px;padding:3px 8px;border:1px solid var(--red-glow);border-radius:4px;background:var(--red-glow);">&#x23FB; LOGOUT</a>
       </div>
     </div>
     <div class="mob-drawer-body">
