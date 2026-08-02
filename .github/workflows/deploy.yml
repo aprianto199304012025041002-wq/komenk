@@ -20,21 +20,23 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           SSO_CLIENT_ID: ${{ secrets.SSO_CLIENT_ID }}
-          SSO_PUBLIC_KEY: ${{ secrets.SSO_PUBLIC_KEY }}
+          SSO_PUBLIC_KEY_B64: ${{ secrets.SSO_PUBLIC_KEY }}
         run: |
+          SSO_PUBLIC_KEY=$(echo "$SSO_PUBLIC_KEY_B64" | base64 -d)
+
           cat > komenk_config.php << PHPEOF
           <?php
-          define('DB_HOST',        '$DB_HOST');
-          define('DB_NAME',        '$DB_NAME');
-          define('DB_USER',        '$DB_USER');
-          define('DB_PASS',        '$DB_PASS');
-          define('DB_CHARSET',     'utf8mb4');
-          define('SSO_URL',        'https://gudeg.xo.je/sso.php');
-          define('SSO_CLIENT_ID',  '$SSO_CLIENT_ID');
+          define('DB_HOST',         '$DB_HOST');
+          define('DB_NAME',         '$DB_NAME');
+          define('DB_USER',         '$DB_USER');
+          define('DB_PASS',         '$DB_PASS');
+          define('DB_CHARSET',      'utf8mb4');
+          define('SSO_URL',         'https://gudeg.xo.je/sso.php');
+          define('SSO_CLIENT_ID',   '$SSO_CLIENT_ID');
           define('SSO_CALLBACK_URL','https://komenk.balmonjogja.info/callback.php');
-          define('APP_NAME',       'komenk');
-          define('APP_BASE_URL',   'https://komenk.balmonjogja.info');
-          define('SSO_PUBLIC_KEY', <<<'PEM'
+          define('APP_NAME',        'komenk');
+          define('APP_BASE_URL',    'https://komenk.balmonjogja.info');
+          define('SSO_PUBLIC_KEY',  <<<'PEM'
           $SSO_PUBLIC_KEY
           PEM);
           PHPEOF
@@ -42,8 +44,8 @@ jobs:
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
+          server: 153.92.10.189
+          username: u781960094.komenk.balmonjogja.info
           password: ${{ secrets.FTP_PASS }}
           port: 21
           local-dir: ./
