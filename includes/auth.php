@@ -1,8 +1,4 @@
 <?php
-/**
- * includes/auth.php — SSO consumer helper untuk KOMENK
- */
-
 require_once __DIR__ . '/../config.php';
 
 function _session_start(): void {
@@ -20,7 +16,11 @@ function _session_start(): void {
 function require_login(): void {
     _session_start();
     if (empty($_SESSION['user_id'])) {
-        header('Location: /login.php');
+        $state = bin2hex(random_bytes(16));
+        $_SESSION['sso_state']    = $state;
+        $_SESSION['sso_state_ts'] = time();
+        $login_url = SSO_URL . '?client_id=' . urlencode(SSO_CLIENT_ID) . '&state=' . urlencode($state);
+        header('Location: ' . $login_url);
         exit;
     }
 }
@@ -48,9 +48,7 @@ function verify_sso_token(string $token): array|false {
     [$header, $body, $sig] = $parts;
 
     $header_data = json_decode($b64d($header), true);
-    $alg = $header_data['alg'] ?? '';
-
-    if ($alg !== 'RS256') return false;
+    if (($header_data['alg'] ?? '') !== 'RS256') return false;
 
     $public_key_pem = defined('SSO_PUBLIC_KEY') ? SSO_PUBLIC_KEY : false;
     if (!$public_key_pem) return false;
