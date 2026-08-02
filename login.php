@@ -17,10 +17,18 @@ $_SESSION['sso_state_ts'] = time();
 $login_url = SSO_URL . '?client_id=' . urlencode(SSO_CLIENT_ID) . '&state=' . urlencode($state);
 
 $err_msg = '';
-switch ($_GET['err'] ?? '') {
+$err_code = $_GET['err'] ?? '';
+
+// err=3 (state CSRF tidak cocok) — biasanya terjadi kalau masuk dari link eksternal
+// Langsung redirect ke SSO tanpa tampilkan error
+if ($err_code === '3') {
+    header('Location: ' . htmlspecialchars($login_url));
+    exit;
+}
+
+switch ($err_code) {
     case '1': $err_msg = 'Token tidak ditemukan. Coba login kembali.'; break;
     case '2': $err_msg = 'Token tidak valid atau sudah kedaluwarsa.'; break;
-    case '3': $err_msg = 'Sesi login tidak valid. Coba lagi.'; break;
     case '403': $err_msg = 'Akun Anda tidak memiliki akses ke aplikasi ini.'; break;
 }
 ?>
