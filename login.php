@@ -19,10 +19,16 @@ $login_url = SSO_URL . '?client_id=' . urlencode(SSO_CLIENT_ID) . '&state=' . ur
 $err_msg = '';
 $err_code = $_GET['err'] ?? '';
 
-// err=3 (state CSRF tidak cocok) — biasanya terjadi kalau masuk dari link eksternal
-// Langsung redirect ke SSO tanpa tampilkan error
+// Kalau tidak ada error, langsung redirect ke GUDEG SSO
+// User yang sudah login di GUDEG akan langsung balik tanpa perlu input password
+if (!$err_code) {
+    header('Location: ' . $login_url);
+    exit;
+}
+
+// err=3 (state CSRF) — reset dan redirect ulang
 if ($err_code === '3') {
-    header('Location: ' . htmlspecialchars($login_url));
+    header('Location: ' . $login_url);
     exit;
 }
 
