@@ -53,7 +53,7 @@ jobs:
           port: 21
           local-dir: ./
           server-dir: /public_html/
-          state-name: .ftp-deploy-sync-state.json
+          state-name: .ftp-state-v2.json
           exclude: |
             **/.git*
             **/.git*/**
