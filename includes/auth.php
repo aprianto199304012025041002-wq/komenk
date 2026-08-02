@@ -1,7 +1,6 @@
 <?php
 /**
  * includes/auth.php — SSO consumer helper untuk KOMENK
- * Pola identik dengan PASAR, disesuaikan untuk KOMENK.
  */
 
 require_once __DIR__ . '/../config.php';
@@ -21,11 +20,7 @@ function _session_start(): void {
 function require_login(): void {
     _session_start();
     if (empty($_SESSION['user_id'])) {
-        $state = bin2hex(random_bytes(16));
-        $_SESSION['sso_state']    = $state;
-        $_SESSION['sso_state_ts'] = time();
-        $login_url = SSO_URL . '?client_id=' . urlencode(SSO_CLIENT_ID) . '&state=' . urlencode($state);
-        header('Location: ' . $login_url);
+        header('Location: /login.php');
         exit;
     }
 }
