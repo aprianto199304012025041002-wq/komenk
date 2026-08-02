@@ -16,11 +16,7 @@ function _session_start(): void {
 function require_login(): void {
     _session_start();
     if (empty($_SESSION['user_id'])) {
-        $state = bin2hex(random_bytes(16));
-        $_SESSION['sso_state']    = $state;
-        $_SESSION['sso_state_ts'] = time();
-        $login_url = SSO_URL . '?client_id=' . urlencode(SSO_CLIENT_ID) . '&state=' . urlencode($state);
-        header('Location: ' . $login_url);
+        header('Location: ' . APP_BASE_URL . '/login.php');
         exit;
     }
 }
@@ -66,10 +62,10 @@ function verify_sso_token(string $token): array|false {
     if (($payload['iss'] ?? '') !== 'gudeg-sso') return false;
 
     return [
-        'user_id' => $payload['sub']   ?? '',
-        'name'    => $payload['name']  ?? '',
-        'email'   => $payload['email'] ?? '',
-        'role'    => $payload['role']  ?? 'user',
-        'exp'     => $payload['exp']   ?? 0,
+        'user_id' => $payload['user_id'] ?? $payload['sub'] ?? '',
+        'name'    => $payload['name']    ?? '',
+        'email'   => $payload['email']   ?? '',
+        'role'    => $payload['role']    ?? 'user',
+        'exp'     => $payload['exp']     ?? 0,
     ];
 }
