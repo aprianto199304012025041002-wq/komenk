@@ -22,12 +22,8 @@ jobs:
           SSO_CLIENT_ID: ${{ secrets.SSO_CLIENT_ID }}
           SSO_PUBLIC_KEY: ${{ secrets.SSO_PUBLIC_KEY }}
         run: |
-          # Tulis public key ke file dulu
-          printf '%s' "$SSO_PUBLIC_KEY" > /tmp/sso_public.pem
-
-          # Generate config
           php -r "
-            \$key = file_get_contents('/tmp/sso_public.pem');
+            \$key = getenv('SSO_PUBLIC_KEY');
             \$config = '<?php' . PHP_EOL
               . \"define('DB_HOST',         '\" . getenv('DB_HOST') . \"');\" . PHP_EOL
               . \"define('DB_NAME',         '\" . getenv('DB_NAME') . \"');\" . PHP_EOL
@@ -41,7 +37,7 @@ jobs:
               . \"define('APP_BASE_URL',    'https://komenk.balmonjogja.info');\" . PHP_EOL
               . \"define('SSO_PUBLIC_KEY',  \" . var_export(\$key, true) . \");\" . PHP_EOL;
             file_put_contents('komenk_config.php', \$config);
-            echo 'komenk_config.php generated OK' . PHP_EOL;
+            echo 'OK' . PHP_EOL;
           "
 
       - name: Deploy via FTP
