@@ -20,26 +20,29 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           SSO_CLIENT_ID: ${{ secrets.SSO_CLIENT_ID }}
-          SSO_PUBLIC_KEY_B64: ${{ secrets.SSO_PUBLIC_KEY }}
+          SSO_PUBLIC_KEY: ${{ secrets.SSO_PUBLIC_KEY }}
         run: |
-          SSO_PUBLIC_KEY=$(echo "$SSO_PUBLIC_KEY_B64" | base64 -d)
+          # Tulis public key ke file dulu
+          printf '%s' "$SSO_PUBLIC_KEY" > /tmp/sso_public.pem
 
-          cat > komenk_config.php << PHPEOF
-          <?php
-          define('DB_HOST',         '$DB_HOST');
-          define('DB_NAME',         '$DB_NAME');
-          define('DB_USER',         '$DB_USER');
-          define('DB_PASS',         '$DB_PASS');
-          define('DB_CHARSET',      'utf8mb4');
-          define('SSO_URL',         'https://gudeg.xo.je/sso.php');
-          define('SSO_CLIENT_ID',   '$SSO_CLIENT_ID');
-          define('SSO_CALLBACK_URL','https://komenk.balmonjogja.info/callback.php');
-          define('APP_NAME',        'komenk');
-          define('APP_BASE_URL',    'https://komenk.balmonjogja.info');
-          define('SSO_PUBLIC_KEY',  <<<'PEM'
-          $SSO_PUBLIC_KEY
-          PEM);
-          PHPEOF
+          # Generate config
+          php -r "
+            \$key = file_get_contents('/tmp/sso_public.pem');
+            \$config = '<?php' . PHP_EOL
+              . \"define('DB_HOST',         '\" . getenv('DB_HOST') . \"');\" . PHP_EOL
+              . \"define('DB_NAME',         '\" . getenv('DB_NAME') . \"');\" . PHP_EOL
+              . \"define('DB_USER',         '\" . getenv('DB_USER') . \"');\" . PHP_EOL
+              . \"define('DB_PASS',         '\" . getenv('DB_PASS') . \"');\" . PHP_EOL
+              . \"define('DB_CHARSET',      'utf8mb4');\" . PHP_EOL
+              . \"define('SSO_URL',         'https://gudeg.xo.je/sso.php');\" . PHP_EOL
+              . \"define('SSO_CLIENT_ID',   '\" . getenv('SSO_CLIENT_ID') . \"');\" . PHP_EOL
+              . \"define('SSO_CALLBACK_URL','https://komenk.balmonjogja.info/callback.php');\" . PHP_EOL
+              . \"define('APP_NAME',        'komenk');\" . PHP_EOL
+              . \"define('APP_BASE_URL',    'https://komenk.balmonjogja.info');\" . PHP_EOL
+              . \"define('SSO_PUBLIC_KEY',  \" . var_export(\$key, true) . \");\" . PHP_EOL;
+            file_put_contents('komenk_config.php', \$config);
+            echo 'komenk_config.php generated OK' . PHP_EOL;
+          "
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
