@@ -1,6 +1,10 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+// FIX: ganti wildcard CORS dengan whitelist domain sendiri,
+// konsisten dengan _security.php yang sudah ada.
+// Sekaligus tambahkan rate limiting via _security.php.
+require_once __DIR__ . '/../api/_security.php';
+check_rate_limit('clients', 30, 60);
 header('Cache-Control: public, max-age=30');
 
 require_once __DIR__ . '/../db.php';
