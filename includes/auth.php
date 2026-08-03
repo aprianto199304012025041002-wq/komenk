@@ -1,6 +1,22 @@
 <?php
 require_once __DIR__ . '/../config.php';
 
+// FIX: tambahkan security headers dasar di satu tempat terpusat.
+// Hanya header yang aman untuk semua response type (HTML dan JSON API):
+//   - X-Content-Type-Options: cegah MIME-sniffing
+//   - X-Frame-Options: cegah clickjacking / iframe embedding
+//   - X-XSS-Protection: mitigasi reflected XSS di browser lama
+//   - Referrer-Policy: batasi info referrer ke origin saja
+// CSP tidak diset di sini karena index.php load banyak CDN eksternal
+// dan API endpoints return JSON sehingga CSP tidak relevan untuk mereka.
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header_remove('X-Powered-By');
+}
+
 function _session_start(): void {
     if (session_status() !== PHP_SESSION_NONE) return;
     session_set_cookie_params([
