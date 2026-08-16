@@ -1,0 +1,16 @@
+# ── Secrets & konfigurasi sensitif ───────────────────────────────────────────
+komenk_config.php
+
+# ── FTP deploy state ──────────────────────────────────────────────────────────
+.ftp-deploy-sync-state.json
+
+# ── IDE & editor junk ─────────────────────────────────────────────────────────
+.vs/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
