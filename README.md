@@ -144,11 +144,13 @@ Push ke `main` → GitHub Actions:
 | `DB_NAME` | Nama database |
 | `DB_USER` | Username database |
 | `DB_PASS` | Password database |
-| `SSO_CLIENT_ID` | Client ID terdaftar di GUDEG |
+| `SSO_CLIENT_ID` | Client ID terdaftar di GUDEG (`fea056cf6cdea01d`) |
 | `SSO_PUBLIC_KEY` | RSA public key GUDEG (base64) |
 | `FTP_HOST` | Hostname FTP Hostinger |
 | `FTP_USER` | Username FTP |
 | `FTP_PASS` | Password FTP |
+
+> KOMENK hanya memverifikasi token secara lokal (RS256 via `SSO_PUBLIC_KEY`) — tidak butuh `SSO_CLIENT_SECRET` karena tidak pernah memanggil `/verify.php` server-side.
 
 ---
 
