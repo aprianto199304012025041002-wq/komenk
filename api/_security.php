@@ -3,6 +3,15 @@
  * _security.php — helper keamanan
  */
 
+// ── Autentikasi: wajib sesi login SSO GUDEG ───────────────────────
+require_once __DIR__ . '/../includes/auth.php';
+if (!is_logged_in()) {
+    http_response_code(401);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    exit;
+}
+
 // ── CORS: izinkan domain sendiri + akses langsung ───────────────
 $allowed_origins = [
     'https://komenk.balmonjogja.info',
