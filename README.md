@@ -39,7 +39,6 @@ komenk/
 │   ├── _security.php       # Helper keamanan API: cek sesi SSO, rate limit, CORS
 │   ├── clients.php         # Daftar klien + statistik (total ISR, total link count)
 │   ├── isr.php             # Semua baris ISR mentah satu klien (untuk render peta di sisi klien)
-│   └── link_detail.php     # Detail satu link_id (untuk detail panel)
 ├── includes/
 │   └── auth.php            # Helper sesi SSO: _session_start(), require_login(), verify_token(), is_logged_in()
 ├── callback.php            # SSO OAuth callback — verifikasi token + state, isi session
