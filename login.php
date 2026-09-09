@@ -43,7 +43,7 @@ switch ($err_code) {
 :root,[data-theme="dark"]{
   --bg:#080b10;--surface:#0f1520;--surface2:#161e2c;
   --border:#1e2a3a;--border-hi:#2a3a50;
-  --accent:#00e5ff;--accent-glow:rgba(0,229,255,.18);--accent-bg:rgba(0,229,255,.06);--accent-bdr:rgba(0,229,255,.2);
+  --accent:#4A90D9;--accent-glow:rgba(74,144,217,.18);--accent-bg:rgba(74,144,217,.06);--accent-bdr:rgba(74,144,217,.2);
   --text:#f1f5f9;--muted:#4a6080;--muted-hi:#6b8099;
   --red:#ef4444;--red-glow:rgba(239,68,68,.14);
   --glass:rgba(8,11,16,.88);--glass-hi:rgba(15,21,32,.95);
@@ -55,7 +55,7 @@ switch ($err_code) {
 [data-theme="bright"]{
   --bg:#f0f4f8;--surface:#ffffff;--surface2:#edf2f7;
   --border:#d1dbe8;--border-hi:#b8c8da;
-  --accent:#0284c7;--accent-glow:rgba(2,132,199,.12);--accent-bg:rgba(2,132,199,.07);--accent-bdr:rgba(2,132,199,.25);
+  --accent:#1351B4;--accent-glow:rgba(19,81,180,.12);--accent-bg:rgba(19,81,180,.07);--accent-bdr:rgba(19,81,180,.25);
   --text:#0f172a;--muted:#64748b;--muted-hi:#475569;
   --red:#dc2626;--red-glow:rgba(220,38,38,.1);
   --glass:rgba(240,244,248,.92);--glass-hi:rgba(255,255,255,.97);
@@ -87,9 +87,9 @@ body{display:flex;align-items:center;justify-content:center;min-height:100dvh;pa
 
 /* SSO Button */
 .btn-sso{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 16px;background:var(--accent-bg);border:1px solid var(--accent-bdr);border-radius:var(--radius);color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;transition:background var(--t-fast),border-color var(--t-fast),box-shadow var(--t-fast),transform var(--t-fast);-webkit-tap-highlight-color:transparent;}
-.btn-sso:hover{background:rgba(0,229,255,.12);border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow);transform:translateY(-1px);}
+.btn-sso:hover{background:rgba(74,144,217,.12);border-color:var(--accent);box-shadow:0 0 20px var(--accent-glow);transform:translateY(-1px);}
 .btn-sso:active{transform:scale(.98);}
-[data-theme="bright"] .btn-sso:hover{background:rgba(2,132,199,.1);}
+[data-theme="bright"] .btn-sso:hover{background:rgba(19,81,180,.1);}
 .btn-sso-icon{font-size:18px;flex-shrink:0;}
 
 /* Note */
