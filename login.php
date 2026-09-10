@@ -175,7 +175,7 @@ body {
     <div class="logo-name">KOMENK</div>
     <div class="logo-desc">
       Koordinat Microwave Link
-      <span class="logo-org">Balai Monitor Spektrum Frekuensi Radio Kelas I Yogyakarta</span>
+      <span class="logo-org">BALAI MONITOR SPEKTRUM FREKUENSI RADIO DAN INFRASTRUKTUR DIGITAL KELAS I YOGYAKARTA</span>
     </div>
   </div>
 
