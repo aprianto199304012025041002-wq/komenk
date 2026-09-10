@@ -16,7 +16,7 @@ $user = get_user();
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#080b10">
-<title>KOMENK · Koordinat Microwave Link</title>
+<title>KOMENK — Dashboard</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 <link rel="stylesheet" href="/assets/css/komenk.css?v=<?= filemtime(__DIR__.'/assets/css/komenk.css') ?>">
 </head>
