@@ -76,7 +76,7 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 .theme-fab:hover { border-color: var(--accent); color: var(--accent); }
-.login-wrap { width: 100%; max-width: 340px; }
+.login-wrap { width: 100%; max-width: 520px; }
 .logo-area { text-align: center; margin-bottom: 24px; }
 .logo-icon {
     width: 56px; height: 56px;
@@ -102,7 +102,7 @@ body {
 }
 .logo-org {
     display: block; margin-top: 3px;
-    font-size: clamp(6px, 1.8vw, 9px);
+    font-size: 10px;
     color: var(--muted, #94a3b8);
     letter-spacing: .02em; text-transform: none;
     line-height: 1.6; white-space: nowrap;
