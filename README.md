@@ -38,13 +38,16 @@ komenk/
 ├── api/
 │   ├── _security.php       # Helper keamanan API: cek sesi SSO, rate limit, CORS
 │   ├── clients.php         # Daftar klien + statistik (total ISR, total link count)
-│   ├── isr.php             # Semua baris ISR mentah satu klien (untuk render peta di sisi klien)
+│   └── isr.php             # Semua baris ISR mentah satu klien (filter opsional per link_id)
+├── assets/
+│   └── css/komenk.css      # Stylesheet utama
 ├── includes/
 │   └── auth.php            # Helper sesi SSO: _session_start(), require_login(), verify_token(), is_logged_in()
 ├── callback.php            # SSO OAuth callback — verifikasi token + state, isi session
 ├── config.php              # Loader konfigurasi → require komenk_config.php (tidak di-commit)
 ├── db.php                  # Koneksi PDO MySQL
 ├── default.php             # Landing page / halaman default
+├── favicon.svg             # Favicon aplikasi
 ├── index.php               # Halaman peta utama (butuh login)
 ├── login.php               # Redirect ke SSO GUDEG dengan state CSRF
 └── logout.php              # Hapus session + redirect
@@ -101,7 +104,7 @@ Browser
   │    → daftar klien: clnt_id, nama, total ISR, total link count
   │
   └─ GET api/isr.php?clnt_id=X
-       → semua baris ISR mentah klien X
+       → semua baris ISR mentah klien X (opsional: &link_id=Y untuk satu link)
        │
        └─ JS: clusterISRtoSites()
               → kelompokkan baris ISR ke "site" berdasarkan radius 100m
@@ -126,6 +129,8 @@ User → login.php (generate state CSRF → redirect ke gudeg.xo.je/sso.php)
      → Redirect ke index.php
 ```
 
+KOMENK hanya memverifikasi token secara lokal (RS256 via `SSO_PUBLIC_KEY`) — tidak butuh `SSO_CLIENT_SECRET` karena tidak pernah memanggil `/verify.php` server-side.
+
 ---
 
 ## 🚀 Deploy
@@ -149,8 +154,6 @@ Push ke `main` → GitHub Actions:
 | `FTP_USER` | Username FTP |
 | `FTP_PASS` | Password FTP |
 
-> KOMENK hanya memverifikasi token secara lokal (RS256 via `SSO_PUBLIC_KEY`) — tidak butuh `SSO_CLIENT_SECRET` karena tidak pernah memanggil `/verify.php` server-side.
-
 ---
 
 ## 🛡️ Keamanan
@@ -159,9 +162,10 @@ Push ke `main` → GitHub Actions:
 - `.htaccess` tidak di-overwrite saat deploy (di-exclude dari FTP workflow)
 - `Options -Indexes` — directory listing dimatikan
 - Semua endpoint API (`api/`) memverifikasi sesi SSO via `_security.php` sebelum mengembalikan data
-- Session dengan `httponly`, `secure`, `SameSite=None` (cross-origin SSO callback), regenerasi ID setelah login
-- Validasi state CSRF di `callback.php` (one-time, expired setelah 10 menit)
+- Rate limiting di `api/_security.php` untuk endpoint `isr` dan `clients`
 - CORS dinamis di API — hanya `APP_BASE_URL` yang diizinkan
+- Session: `httponly`, `secure`, `SameSite=None` (cross-origin SSO callback), regenerasi ID setelah login
+- Validasi state CSRF di `callback.php` (one-time, expired setelah 10 menit)
 
 ---
 
@@ -169,7 +173,8 @@ Push ke `main` → GitHub Actions:
 
 - **Profil terrain** menggunakan Open-Elevation API publik (`api.open-elevation.com`) — bisa lambat atau tidak tersedia. Ini layanan eksternal, bukan bagian dari infrastruktur Balmon.
 - **Ghost site** — kalau `link_id` ada tapi koordinat stasiun lawan tidak ada di database (ISR lawan mungkin di wilayah lain atau belum di-import), site lawan ditampilkan sebagai ghost dengan estimasi koordinat dari DMS (`to_lat_deg/min/sec` dll).
-- **`api/isr.php`** mengembalikan semua ISR satu klien sekaligus — cocok untuk klien dengan ratusan link, tapi perlu dimonitor kalau ada klien dengan ribuan ISR.
+- **`api/isr.php`** mengembalikan semua ISR satu klien sekaligus. Parameter opsional `link_id` bisa dipakai untuk filter satu link. Perlu dimonitor kalau ada klien dengan ribuan ISR.
+- **`api/clients.php`** mengembalikan daftar klien beserta total ISR dan total link count untuk keperluan UI pemilihan klien.
 
 ---
 
