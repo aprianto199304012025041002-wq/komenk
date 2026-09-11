@@ -101,11 +101,11 @@ body {
     line-height: 1.7; font-family: var(--sans);
 }
 .logo-org {
-    display: block; margin-top: 3px;
-    font-size: 10px;
+    display: block; margin-top: 0;
+    font-size: 9px;
     color: var(--muted, #94a3b8);
-    letter-spacing: .02em; text-transform: none;
-    line-height: 1.3; white-space: nowrap;
+    letter-spacing: .04em; text-transform: uppercase;
+    line-height: 1.25; white-space: nowrap;
 }
 .login-card {
     background: var(--glass-hi);
