@@ -105,7 +105,7 @@ body {
     font-size: 10px;
     color: var(--muted, #94a3b8);
     letter-spacing: .02em; text-transform: none;
-    line-height: 1.6; white-space: nowrap;
+    line-height: 1.3; white-space: nowrap;
 }
 .login-card {
     background: var(--glass-hi);
